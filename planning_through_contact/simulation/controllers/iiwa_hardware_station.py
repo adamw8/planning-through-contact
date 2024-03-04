@@ -20,6 +20,7 @@ from pydrake.all import (
     PortSwitch,
     Demultiplexer,
     Multiplexer,
+    AddDefaultVisualization,
 )
 from planning_through_contact.simulation.planar_pushing.iiwa_planner import IiwaPlanner
 
@@ -53,6 +54,7 @@ class IiwaHardwareStation(RobotSystemBase):
         super().__init__()
         self._sim_config = sim_config
         self._meshcat = meshcat
+        self._num_positions = 7
         scenario_name = "demo"
         scenario_file_name = f"{models_folder}/planar_pushing_iiwa_scenario.yaml"
         scenario = LoadScenario(
@@ -279,6 +281,10 @@ class IiwaHardwareStation(RobotSystemBase):
             planar_translation_to_rigid_tranform.get_input_port(),
             "planar_position_command",
         )
+        builder.ExportOutput(
+            joint_velocity_clamp.get_output_port(),
+            "iiwa_position_command",
+        )
 
         if isinstance(driver_config, JointStiffnessDriver):
             builder.ExportOutput(
@@ -298,6 +304,12 @@ class IiwaHardwareStation(RobotSystemBase):
                 self.station.GetOutputPort(f"{sim_config.slider.name}_state"),
                 "object_state_measured",
             )
+
+        # Set the initial camera pose
+        zoom = 1.8
+        camera_in_world = [0.5, -1/zoom, 1.5/zoom]
+        target_in_world = [0.5, 0, 0]
+        self._meshcat.SetCameraPose(camera_in_world, target_in_world)
 
         builder.BuildInto(self)
 

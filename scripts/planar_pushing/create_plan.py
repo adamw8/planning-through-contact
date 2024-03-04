@@ -510,10 +510,10 @@ if __name__ == "__main__":
         import matplotlib.pyplot as plt
 
         # update config
-        config.contact_config.lam_min = 0.15
-        config.contact_config.lam_max = 0.85
+        config.contact_config.lam_min = 0.2
+        config.contact_config.lam_max = 1-config.contact_config.lam_min
         config.non_collision_cost.distance_to_object_socp = \
-            2.0 if slider_type == "box" else 0.2
+            2.0 if slider_type == "box" else 0.25
 
         output_dir = f"data_collection_trajectories_{slider_type}"
         if os.path.exists(output_dir):

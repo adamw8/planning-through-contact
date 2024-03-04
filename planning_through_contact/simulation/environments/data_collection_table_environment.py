@@ -155,10 +155,16 @@ class DataCollectionTableEnvironment:
         # Inputs to state estimator
         # Connections to update the robot state within state estimator
         
-        builder.Connect(
-            self._desired_position_source.GetOutputPort("planar_position_command"),
-            self._desired_state_source.get_input_port(),
-        )
+        if isinstance(self._robot_system, IiwaHardwareStation):
+            builder.Connect(
+                self._robot_system.GetOutputPort("iiwa_position_command"),
+                self._desired_state_source.get_input_port(),
+            )
+        else:
+            builder.Connect(
+                self._desired_position_source.GetOutputPort("planar_position_command"),
+                self._desired_state_source.get_input_port(),
+            )
 
         builder.Connect(
             self._desired_state_source.get_output_port(),
