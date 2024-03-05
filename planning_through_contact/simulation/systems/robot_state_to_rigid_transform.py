@@ -10,12 +10,12 @@ import numpy as np
 
 
 class RobotStateToRigidTransform(LeafSystem):
-    def __init__(self, plant: MultibodyPlant, robot_model_name: str, pusher_length: float = 0.15):
+    def __init__(self, plant: MultibodyPlant, robot_model_name: str, offset=None):
         super().__init__()
         
         self._plant = plant
         self._plant_context = self._plant.CreateDefaultContext()
-        self._EE_offset = np.array([0, 0, pusher_length / 2.0])
+        self._offset = offset
         self._robot_model_name = robot_model_name
         self._robot_model_instance_index = plant.GetModelInstanceByName(
             robot_model_name
@@ -43,6 +43,6 @@ class RobotStateToRigidTransform(LeafSystem):
             self._plant_context,
             self._plant.GetBodyByName("pusher")
         )
-        # TODO: fix this
-        # pose.set_translation(pose.translation() + pose.rotation()*self._EE_offset)
+        if self._offset:
+            pose.set_translation(pose.translation() + pose.rotation()*self._offset)
         output.set_value(pose)

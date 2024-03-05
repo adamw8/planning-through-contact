@@ -220,7 +220,7 @@ class OutputFeedbackTableEnvironment:
             self._robot_system,
         )
 
-        # TODO: hacky way to get z value. Works for box and tee
+        # TODO (Adam): hacky way to get z value. Works for box and tee
         if self._sim_config.slider.name == "box":
             z_value = self._sim_config.slider.geometry.height / 2.0
         else: # T
@@ -231,7 +231,6 @@ class OutputFeedbackTableEnvironment:
             RobotStateToRigidTransform(
                 self._plant,
                 self._robot_system.robot_model_name,
-                pusher_length=0.15 # TODO: hard coded for pusher_floating_hydroelastic.sdf
             ),
         )
 
@@ -278,7 +277,7 @@ class OutputFeedbackTableEnvironment:
 
         #     # Actual slider state loggers
         #     # TODO: after changing StateToRigidTransform to RobotStateToRigidTransform
-        #     # this no longer
+        #     # this no longer works (since the slider input is generalized coords)
         #     slider_state_to_rigid_transform = builder.AddNamedSystem(
         #         "SliderStateToRigidTransform",
         #         StateToRigidTransform(
@@ -383,23 +382,23 @@ class OutputFeedbackTableEnvironment:
             for t in np.append(np.arange(0, timeout, time_step), timeout):
                 self._simulator.AdvanceTo(t)
                 # reset position if necessary
-                # reset_dict = self._should_reset_environment(t,
-                #                                             trans_tol=0.0075,
-                #                                             rot_tol = 1.0*np.pi/180
-                # ) 
-                # if reset_dict['pusher'] or reset_dict['slider']:
-                #     if reset_dict['pusher'] == False and reset_dict['slider'] == True:
-                #         successful_idx.append(self._multi_run_idx-1)
-                #     if self._multi_run_idx == self._total_runs:
-                #         break
-                #     self._reset_environment(t, reset_dict)
+                reset_dict = self._should_reset_environment(t,
+                                                            trans_tol=0.0075,
+                                                            rot_tol = 1.0*np.pi/180
+                ) 
+                if reset_dict['pusher'] or reset_dict['slider']:
+                    if reset_dict['pusher'] == False and reset_dict['slider'] == True:
+                        successful_idx.append(self._multi_run_idx-1)
+                    if self._multi_run_idx == self._total_runs:
+                        break
+                    self._reset_environment(t, reset_dict)
                 
                 # visualization of target pose
-                # self._visualize_desired_slider_pose(
-                #     t,
-                #     PlanarPose(0.5, 0.0, 0.0),
-                #     scale_factor=1.0
-                # )
+                self._visualize_desired_slider_pose(
+                    t,
+                    self._sim_config.slider_goal_pose,
+                    scale_factor=1.0
+                )
 
                 # Print every 5 seconds
                 if t % 5 == 0:
@@ -443,7 +442,6 @@ class OutputFeedbackTableEnvironment:
                                   target_slider_pose: PlanarPose=PlanarPose(0.5, 0.0, 0.0),
                                   trans_tol: float=0.02, # +/- 2cm
                                   rot_tol: float=2.0*np.pi/180, # +/- 2 degrees
-                                  slider_vel_tol: float=0.008 # 8mm/s
         ) -> dict[str, bool]:
         false_dict = {'pusher': False, 'slider': False}
         if self._multi_run_config is None:
@@ -451,18 +449,17 @@ class OutputFeedbackTableEnvironment:
         
         # Extract pusher and slider poses
         # TODO: need to do FK to get the slider pose
-        pusher_position = self._plant.GetPositions(self.mbp_context, self._robot_model_instance)
-        pusher_speed = np.linalg.norm(
-            self._plant.GetVelocities(self.mbp_context, self._robot_model_instance)
-        )
-        pusher_pose = PlanarPose(*pusher_position, 0.0)
+        pusher_position = self._plant.EvalBodyPoseInWorld(
+            self.mbp_context,
+            self._plant.GetBodyByName("pusher")
+        ).translation()
+        pusher_pose = PlanarPose(pusher_position[0], pusher_position[1], 0.0)
         slider_position = self._plant.GetPositions(self.mbp_context, self._slider_model_instance)
         slider_pose = PlanarPose.from_generalized_coords(slider_position)
         
         # Check if final pose has been reached
         reached_pusher_target_pose = target_pusher_pose.x-2*trans_tol <= pusher_pose.x <= target_pusher_pose.x+2*trans_tol and \
-            target_pusher_pose.y-2*trans_tol <= pusher_pose.y <= target_pusher_pose.y+2*trans_tol and \
-            np.linalg.norm(pusher_speed) <= slider_vel_tol
+            target_pusher_pose.y-2*trans_tol <= pusher_pose.y <= target_pusher_pose.y+2*trans_tol
 
         reached_slider_target_pose = target_slider_pose.x-trans_tol <= slider_pose.x <= target_slider_pose.x+trans_tol and \
             target_slider_pose.y-trans_tol <= slider_pose.y <= target_slider_pose.y+trans_tol and \
@@ -479,7 +476,6 @@ class OutputFeedbackTableEnvironment:
         if (time - self._last_reset_time) > self._multi_run_config.max_attempt_duration:
             print(f"\n[Run {self._multi_run_idx}] Reseting slider pose due to timeout.")
             print("Final pusher pose:", pusher_pose)
-            print("Final pusher speed:", pusher_speed)
             print("Final slider pose:", slider_pose)
             return {'pusher': True, 'slider': True}
         else:
@@ -500,8 +496,11 @@ class OutputFeedbackTableEnvironment:
             # get a valid slider pose.
             slider_pose = self._multi_run_config.initial_slider_poses[self._multi_run_idx]
             slider_geometry = self._sim_config.dynamics_config.slider.geometry
-            pusher_position = self._plant.GetPositions(self.mbp_context, self._robot_model_instance)
-            pusher_pose = PlanarPose(*pusher_position, 0.0)
+            pusher_position = self._plant.EvalBodyPoseInWorld(
+                self.mbp_context,
+                self._plant.GetBodyByName("pusher")
+            ).translation()
+            pusher_pose = PlanarPose(pusher_position[0], pusher_position[1], 0.0)
 
             collides_with_pusher = _check_collision(pusher_pose, slider_pose, self._plan_config)
             within_workspace = _slider_within_workspace(self._workspace, slider_pose, slider_geometry)
@@ -574,9 +573,8 @@ class OutputFeedbackTableEnvironment:
             with open(recording_file, "w") as f:
                 f.write(res)
 
-    # # TODO: fix this
     def _visualize_desired_slider_pose(self, t, 
-                                       desired_slider_pose = PlanarPose(0.5, 0.0, 0.0),
+                                       desired_slider_pose: PlanarPose,
                                        scale_factor: float = 1.0):
         # Visualizing the desired slider pose
         self._robot_system._visualize_desired_slider_pose(

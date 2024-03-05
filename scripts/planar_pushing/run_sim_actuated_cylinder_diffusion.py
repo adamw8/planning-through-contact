@@ -87,7 +87,7 @@ def run_sim(
     slider = traj.config.dynamics_config.slider
 
     print(f"Initial finger pose: {traj.initial_pusher_planar_pose}")
-    print(f"Target slider pose: {traj.slider_goal_pose}")
+    print(f"Target slider pose: {traj.target_slider_planar_pose}")
 
     # camera set up
     camera_config = CameraConfig(
