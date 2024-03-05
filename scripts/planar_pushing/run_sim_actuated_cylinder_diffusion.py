@@ -86,6 +86,9 @@ def run_sim(
     traj = PlanarPushingTrajectory.load(plan)
     slider = traj.config.dynamics_config.slider
 
+    print(f"Initial finger pose: {traj.initial_pusher_planar_pose}")
+    print(f"Target slider pose: {traj.slider_goal_pose}")
+
     # camera set up
     camera_config = CameraConfig(
         name="overhead_camera",

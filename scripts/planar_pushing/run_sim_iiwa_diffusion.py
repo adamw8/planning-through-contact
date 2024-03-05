@@ -86,6 +86,9 @@ def run_sim(
     traj = PlanarPushingTrajectory.load(plan)
     slider = traj.config.dynamics_config.slider
 
+    print(f"Initial finger pose: {traj.initial_pusher_planar_pose}")
+    print(f"Target slider pose: {traj.slider_goal_pose}")
+
     # camera set up
     zoom = .9
     position = np.array([0.5 + traj.target_slider_planar_pose.x, 0, 0.5]) / zoom
@@ -360,8 +363,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.checkpoint is None:
-        # checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/iiwa_push_tee_v1/checkpoints/epoch=0220-val_loss=0.007417.ckpt'
-        checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/iiwa_push_tee_v1/checkpoints/latest.ckpt'
+        checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/iiwa_push_tee_v2/checkpoints/latest.ckpt'
     else:
         checkpoint = args.checkpoint
     
@@ -369,7 +371,7 @@ if __name__ == "__main__":
     station_meshcat = StartMeshcat()
     # plan path is used to extract sim_config
     # the trajectory in plan path is not used
-    plan = "data_collection_trajectories_tee_v3/run_0/traj_0/trajectory/traj_rounded.pkl"
+    plan = "data_collection_trajectories_tee_v4/run_0/traj_0/trajectory/traj_rounded.pkl"
     run_sim(
         plan=plan,
         checkpoint=checkpoint,
