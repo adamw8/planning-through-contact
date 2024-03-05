@@ -314,10 +314,12 @@ class IiwaHardwareStation(RobotSystemBase):
                 "rgbd_sensor_overhead_camera",
             )
 
-        # Set the initial meshcat view
+        # Set the initial camera pose
         zoom = 1.8
-        camera_in_world = [0.5, -1/zoom, 1.5/zoom]
-        target_in_world = [0.5, 0, 0]
+        camera_in_world = [sim_config.slider_goal_pose.x, 
+                           (sim_config.slider_goal_pose.y-1)/zoom,
+                           1.5/zoom]
+        target_in_world = [sim_config.slider_goal_pose.x, sim_config.slider_goal_pose.y, 0]
         self._meshcat.SetCameraPose(camera_in_world, target_in_world)
 
         builder.BuildInto(self)

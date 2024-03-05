@@ -82,7 +82,9 @@ class CylinderActuatedStation(RobotSystemBase):
         # )
         # Set the initial camera pose
         zoom = 1.8
-        camera_in_world = [sim_config.slider_goal_pose.x, -1/zoom, 1.5/zoom]
+        camera_in_world = [sim_config.slider_goal_pose.x, 
+                           (sim_config.slider_goal_pose.y-1)/zoom,
+                           1.5/zoom]
         target_in_world = [sim_config.slider_goal_pose.x, sim_config.slider_goal_pose.y, 0]
         self._meshcat.SetCameraPose(camera_in_world, target_in_world)
         AddDefaultVisualization(builder, self._meshcat)

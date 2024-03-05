@@ -530,7 +530,7 @@ if __name__ == "__main__":
             slider=BoxWorkspace(
                 width=0.35,
                 height=0.5,
-                center=np.array([0.5, 0.0]),
+                center=np.array([0.575, 0.0]),
                 buffer=0,
             ),
         )
@@ -540,8 +540,8 @@ if __name__ == "__main__":
             num_trajs,
             workspace,
             config,
-            (0.5, 0.0),
-            init_pusher_pose=PlanarPose(0.5, 0.25, 0.0),
+            (0.575, 0.0),
+            init_pusher_pose=PlanarPose(0.575, 0.25, 0.0),
             limit_rotations=True if slider_type == "box" else False,
             # noise_final_pose=True,
             noise_final_pose=False,

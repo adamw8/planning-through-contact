@@ -51,13 +51,9 @@ class DiffusionPolicyController(LeafSystem):
     def __init__(
         self,
         checkpoint: str,
+        initial_pusher_pose: PlanarPose,
+        target_slider_pose: PlanarPose,
         diffusion_policy_path: str = "/home/adam/workspace/gcs-diffusion",
-        initial_pusher_pose: PlanarPose=PlanarPose(
-            x=0.5, y=0.25, theta=0.0
-        ),
-        target_slider_pose: PlanarPose=PlanarPose(
-            x=0.5, y=0.0, theta=0.0
-        ),
         freq: float = 10.0,
         delay: float=1.0,
         debug: bool = False

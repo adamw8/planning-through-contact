@@ -26,10 +26,6 @@ class InverseKinematicsSystem(LeafSystem):
 
     def DoCalcVectorOutput(self, context, output):
         rigid_transform = self.EvalAbstractInput(context, 0).get_value()
-        # Hack to fix initialization error
-        # TODO: fix this properly (set initial output port value in input systems)
-        if np.allclose(rigid_transform.translation()[:2], np.zeros(2)):
-            rigid_transform.set_translation(np.array([0.5, 0.25, 0]))
         q = solve_ik(self._plant,
                      rigid_transform,
                      self._default_joint_positions,

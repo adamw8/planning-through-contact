@@ -91,11 +91,10 @@ def run_sim(
     )
     # camera set up
     zoom = .9
-    position = np.array([1, 0, 0.5]) / zoom
-    center_of_view = np.array([0.5, 0.0, 0.0])
+    position = np.array([0.5 + traj.target_slider_planar_pose.x, 0, 0.5]) / zoom
+    center_of_view = np.array([traj.target_slider_planar_pose.x, 0.0, 0.0])
     angle = 0.9*np.arctan((position[0]-center_of_view[0])/(position[2]-center_of_view[2]))
     orientation = RollPitchYaw(0, np.pi - angle, np.pi)
-    position = np.array([1.0, 0, 0.5]) / zoom
     camera_config = CameraConfig(
         name="overhead_camera",
         X_PB=Transform(

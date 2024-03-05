@@ -88,11 +88,10 @@ def run_sim(
 
     # camera set up
     zoom = .9
-    position = np.array([1, 0, 0.5]) / zoom
-    center_of_view = np.array([0.5, 0.0, 0.0])
+    position = np.array([0.5 + traj.target_slider_planar_pose.x, 0, 0.5]) / zoom
+    center_of_view = np.array([traj.target_slider_planar_pose.x, 0.0, 0.0])
     angle = 0.9*np.arctan((position[0]-center_of_view[0])/(position[2]-center_of_view[2]))
     orientation = RollPitchYaw(0, np.pi - angle, np.pi)
-    position = np.array([1.0, 0, 0.5]) / zoom
     camera_config = CameraConfig(
         name="overhead_camera",
         X_PB=Transform(
@@ -104,7 +103,13 @@ def run_sim(
     )
     
     # Set up multi run config
-    multi_run_config = get_multi_run_config(num_runs, max_attempt_duration, seed=seed, traj_idx=traj_idx)
+    multi_run_config = get_multi_run_config(num_runs,
+                                            max_attempt_duration,
+                                            seed=seed,
+                                            traj_idx=traj_idx,
+                                            initial_slider_pose=traj.initial_slider_planar_pose,
+                                            target_slider_pose=traj.target_slider_planar_pose
+    )
 
     sim_config = PlanarPushingSimConfig(
         slider=slider,
@@ -277,12 +282,12 @@ def get_slider_start_poses(
     num_plans: int,
     workspace: PlanarPushingWorkspace,
     config: PlanarPlanConfig,
+    pusher_pose: PlanarPose,
     limit_rotations: bool = True,  # Use this to start with
 ) -> List[PlanarPushingStartAndGoal]:
     # We want the plans to always be the same
     np.random.seed(seed)
     slider = config.slider_geometry
-    pusher_pose = PlanarPose(0.5, 0.25, 0)
     slider_initial_poses = []
     for _ in range(num_plans):
         slider_initial_pose = _get_slider_pose_within_workspace(
@@ -296,6 +301,7 @@ def get_multi_run_config(num_runs,
                          max_attempt_duration, 
                          seed, 
                          traj_idx = None,
+                         initial_slider_pose=PlanarPose(0.5, 0.25, 0.0),
                          target_slider_pose=PlanarPose(0.5, 0.0, 0.0)):
     # Set up multi run config
     config = get_default_plan_config(
@@ -312,7 +318,7 @@ def get_multi_run_config(num_runs,
         slider=BoxWorkspace(
             width=0.35,
             height=0.5,
-            center=np.array([0.5, 0.0]),
+            center=np.array([target_slider_pose.x, 0.0]),
             buffer=0,
         ),
     )
@@ -321,6 +327,7 @@ def get_multi_run_config(num_runs,
         num_plans=max(num_runs, 100),
         workspace=workspace,
         config=config,
+        pusher_pose=initial_slider_pose,
         limit_rotations=False,
     )
 

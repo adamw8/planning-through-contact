@@ -92,7 +92,10 @@ def run_sim(
         X_PB=Transform(
             RigidTransform(
                 RotationMatrix.MakeXRotation(np.pi),
-                np.array([0.5, 0.0, 1.0])
+                np.array([traj.target_pusher_planar_pose.x, 
+                          traj.target_pusher_planar_pose.y,
+                          1.0]
+                )
             )
         ),
         width=96,
@@ -102,7 +105,14 @@ def run_sim(
     )
     
     # Set up multi run config
-    multi_run_config = get_multi_run_config(num_runs, max_attempt_duration, seed=seed, traj_idx=traj_idx)
+    multi_run_config = get_multi_run_config(
+        num_runs,
+        max_attempt_duration,
+        seed=seed,
+        traj_idx=traj_idx,
+        initial_pusher_pose=traj.initial_pusher_planar_pose,
+        target_slider_pose=traj.target_slider_planar_pose
+    )
 
     sim_config = PlanarPushingSimConfig(
         slider=slider,
@@ -270,12 +280,12 @@ def get_slider_start_poses(
     num_plans: int,
     workspace: PlanarPushingWorkspace,
     config: PlanarPlanConfig,
+    pusher_pose: PlanarPose,
     limit_rotations: bool = True,  # Use this to start with
 ) -> List[PlanarPushingStartAndGoal]:
     # We want the plans to always be the same
     np.random.seed(seed)
     slider = config.slider_geometry
-    pusher_pose = PlanarPose(0.5, 0.25, 0)
     slider_initial_poses = []
     for _ in range(num_plans):
         slider_initial_pose = _get_slider_pose_within_workspace(
@@ -289,6 +299,7 @@ def get_multi_run_config(num_runs,
                          max_attempt_duration, 
                          seed, 
                          traj_idx = None,
+                         initial_pusher_pose=PlanarPose(0.5, 0.25, 0.0),
                          target_slider_pose=PlanarPose(0.5, 0.0, 0.0)):
     # Set up multi run config
     config = get_default_plan_config(
@@ -305,7 +316,7 @@ def get_multi_run_config(num_runs,
         slider=BoxWorkspace(
             width=0.35,
             height=0.5,
-            center=np.array([0.5, 0.0]),
+            center=np.array([target_slider_pose.x, target_slider_pose.y]),
             buffer=0,
         ),
     )
@@ -314,6 +325,7 @@ def get_multi_run_config(num_runs,
         num_plans=max(num_runs, 100),
         workspace=workspace,
         config=config,
+        pusher_pose=initial_pusher_pose,
         limit_rotations=False,
     )
 
