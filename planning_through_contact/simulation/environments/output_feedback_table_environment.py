@@ -56,8 +56,8 @@ from planning_through_contact.simulation.sensors.optitrack_config import Optitra
 from planning_through_contact.simulation.systems.rigid_transform_to_planar_pose_vector_system import (
     RigidTransformToPlanarPoseVectorSystem,
 )
-from planning_through_contact.simulation.systems.state_to_rigid_transform import (
-    StateToRigidTransform,
+from planning_through_contact.simulation.systems.robot_state_to_rigid_transform import (
+    RobotStateToRigidTransform,
 )
 from planning_through_contact.visualize.analysis import (
     plot_joint_state_logs,
@@ -173,9 +173,9 @@ class OutputFeedbackTableEnvironment:
         self._meshcat = station_meshcat
         self._simulator = None
         
-        self._plant = self._robot_system.station_plant
-        self._scene_graph = self._robot_system._scene_graph
-        self._slider = self._robot_system.slider
+        self._plant = self._robot_system.get_station_plant()
+        self._scene_graph = self._robot_system.get_scene_graph()
+        self._slider = self._robot_system.get_slider()
 
         if self._multi_run_config:
             self._multi_run_idx = 0
@@ -227,15 +227,15 @@ class OutputFeedbackTableEnvironment:
             z_value = self._sim_config.slider.geometry.box_1.height / 2.0
 
         self._robot_state_to_rigid_transform = builder.AddNamedSystem(
-            "PusherStateToRigidTransform",
-            StateToRigidTransform(
-                self._robot_system.station_plant, 
+            "RobotStateToRigidTransform",
+            RobotStateToRigidTransform(
+                self._plant,
                 self._robot_system.robot_model_name,
-                z_value=z_value
+                pusher_length=0.15 # TODO: hard coded for pusher_floating_hydroelastic.sdf
             ),
         )
 
-        self._meshcat = self._robot_system._meshcat
+        self._meshcat = self._robot_system.get_meshcat()
 
 
         ## Connect systems
@@ -263,64 +263,66 @@ class OutputFeedbackTableEnvironment:
         )
 
         # Add loggers
-        if self._sim_config.collect_data:
-            # Actual pusher state loggers
-            pusher_pose_to_vector = builder.AddSystem(
-                RigidTransformToPlanarPoseVectorSystem()
-            )
-            builder.Connect(
-                self._robot_state_to_rigid_transform.GetOutputPort("pose"),
-                pusher_pose_to_vector.get_input_port(),
-            )
-            self._pusher_pose_logger = LogVectorOutput(
-                pusher_pose_to_vector.get_output_port(), builder
-            )
+        # if self._sim_config.collect_data:
+        #     # Actual pusher state loggers
+        #     pusher_pose_to_vector = builder.AddSystem(
+        #         RigidTransformToPlanarPoseVectorSystem()
+        #     )
+        #     builder.Connect(
+        #         self._robot_state_to_rigid_transform.GetOutputPort("pose"),
+        #         pusher_pose_to_vector.get_input_port(),
+        #     )
+        #     self._pusher_pose_logger = LogVectorOutput(
+        #         pusher_pose_to_vector.get_output_port(), builder
+        #     )
 
-            # Actual slider state loggers
-            slider_state_to_rigid_transform = builder.AddNamedSystem(
-                "SliderStateToRigidTransform",
-                StateToRigidTransform(
-                    self._robot_system.station_plant, 
-                    self._robot_system.slider_model_name,
-                    z_value=z_value
-                ),
-            )
-            slider_pose_to_vector = builder.AddSystem(
-                RigidTransformToPlanarPoseVectorSystem()
-            )
-            builder.Connect(
-                self._robot_system.GetOutputPort("object_state_measured"),
-                slider_state_to_rigid_transform.GetInputPort("state"),
-            )
-            builder.Connect(
-                slider_state_to_rigid_transform.GetOutputPort("pose"),
-                slider_pose_to_vector.get_input_port(),
-            )
-            self._slider_pose_logger = LogVectorOutput(
-                slider_pose_to_vector.get_output_port(), builder
-            )
+        #     # Actual slider state loggers
+        #     # TODO: after changing StateToRigidTransform to RobotStateToRigidTransform
+        #     # this no longer
+        #     slider_state_to_rigid_transform = builder.AddNamedSystem(
+        #         "SliderStateToRigidTransform",
+        #         StateToRigidTransform(
+        #             self._plant, 
+        #             self._robot_system.slider_model_name,
+        #             z_value=z_value
+        #         ),
+        #     )
+        #     slider_pose_to_vector = builder.AddSystem(
+        #         RigidTransformToPlanarPoseVectorSystem()
+        #     )
+        #     builder.Connect(
+        #         self._robot_system.GetOutputPort("object_state_measured"),
+        #         slider_state_to_rigid_transform.GetInputPort("state"),
+        #     )
+        #     builder.Connect(
+        #         slider_state_to_rigid_transform.GetOutputPort("pose"),
+        #         slider_pose_to_vector.get_input_port(),
+        #     )
+        #     self._slider_pose_logger = LogVectorOutput(
+        #         slider_pose_to_vector.get_output_port(), builder
+        #     )
 
-            # Desired pusher state loggers
-            self._pusher_pose_desired_logger = LogVectorOutput(
-                self._desired_position_source.GetOutputPort("planar_position_command"),
-                builder,
-            )
+        #     # Desired pusher state loggers
+        #     self._pusher_pose_desired_logger = LogVectorOutput(
+        #         self._desired_position_source.GetOutputPort("planar_position_command"),
+        #         builder,
+        #     )
             
-            # Desired slider state loggers
-            desired_slider_source = builder.AddNamedSystem(
-                "DesiredSliderSource",
-                ConstantVectorSource(np.array([0.5, 0.0, 0.0]))
-            )
-            self._slider_pose_desired_logger = LogVectorOutput(
-                desired_slider_source.get_output_port(),
-                builder,
-            )
+        #     # Desired slider state loggers
+        #     desired_slider_source = builder.AddNamedSystem(
+        #         "DesiredSliderSource",
+        #         ConstantVectorSource(np.array([0.5, 0.0, 0.0]))
+        #     )
+        #     self._slider_pose_desired_logger = LogVectorOutput(
+        #         desired_slider_source.get_output_port(),
+        #         builder,
+        #     )
 
-            # Actual command loggers and desired command loggers are the same
-            self._control_logger = LogVectorOutput(
-                self._desired_position_source.GetOutputPort("planar_pose_command"),
-                builder,
-            )
+        #     # Actual command loggers and desired command loggers are the same
+        #     self._control_logger = LogVectorOutput(
+        #         self._desired_position_source.GetOutputPort("planar_pose_command"),
+        #         builder,
+        #     )
 
         diagram = builder.Build()
         self._diagram = diagram
@@ -381,24 +383,23 @@ class OutputFeedbackTableEnvironment:
             for t in np.append(np.arange(0, timeout, time_step), timeout):
                 self._simulator.AdvanceTo(t)
                 # reset position if necessary
-                # reset_dict = self._should_reset_environment(t)
-                reset_dict = self._should_reset_environment(t,
-                                                            trans_tol=0.0075,
-                                                            rot_tol = 1.0*np.pi/180
-                ) 
-                if reset_dict['pusher'] or reset_dict['slider']:
-                    if reset_dict['pusher'] == False and reset_dict['slider'] == True:
-                        successful_idx.append(self._multi_run_idx-1)
-                    if self._multi_run_idx == self._total_runs:
-                        break
-                    self._reset_environment(t, reset_dict)
+                # reset_dict = self._should_reset_environment(t,
+                #                                             trans_tol=0.0075,
+                #                                             rot_tol = 1.0*np.pi/180
+                # ) 
+                # if reset_dict['pusher'] or reset_dict['slider']:
+                #     if reset_dict['pusher'] == False and reset_dict['slider'] == True:
+                #         successful_idx.append(self._multi_run_idx-1)
+                #     if self._multi_run_idx == self._total_runs:
+                #         break
+                #     self._reset_environment(t, reset_dict)
+                
                 # visualization of target pose
-                self._visualize_desired_slider_pose(
-                    t,
-                    PlanarPose(0.5, 0.0, 0.0),
-                    scale_factor=1.0
-                )
-                # print errors
+                # self._visualize_desired_slider_pose(
+                #     t,
+                #     PlanarPose(0.5, 0.0, 0.0),
+                #     scale_factor=1.0
+                # )
 
                 # Print every 5 seconds
                 if t % 5 == 0:
@@ -449,6 +450,7 @@ class OutputFeedbackTableEnvironment:
             return false_dict
         
         # Extract pusher and slider poses
+        # TODO: need to do FK to get the slider pose
         pusher_position = self._plant.GetPositions(self.mbp_context, self._robot_model_instance)
         pusher_speed = np.linalg.norm(
             self._plant.GetVelocities(self.mbp_context, self._robot_model_instance)

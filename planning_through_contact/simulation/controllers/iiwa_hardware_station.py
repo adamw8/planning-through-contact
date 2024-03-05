@@ -60,6 +60,9 @@ class IiwaHardwareStation(RobotSystemBase):
         scenario = LoadScenario(
             filename=scenario_file_name, scenario_name=scenario_name
         )
+        # Add cameras to scenario
+        if sim_config.camera_config:
+            scenario.cameras = {'overhead_camera': sim_config.camera_config}
 
         def add_slider_to_parser(parser):
             slider_sdf_url = GetSliderUrl(sim_config)
@@ -304,8 +307,14 @@ class IiwaHardwareStation(RobotSystemBase):
                 self.station.GetOutputPort(f"{sim_config.slider.name}_state"),
                 "object_state_measured",
             )
+        
+        if self._sim_config.camera_config:
+            builder.ExportOutput(
+                self.station.GetOutputPort("overhead_camera.rgb_image"),
+                "rgbd_sensor_overhead_camera",
+            )
 
-        # Set the initial camera pose
+        # Set the initial meshcat view
         zoom = 1.8
         camera_in_world = [0.5, -1/zoom, 1.5/zoom]
         target_in_world = [0.5, 0, 0]
@@ -326,3 +335,20 @@ class IiwaHardwareStation(RobotSystemBase):
     def robot_model_name(self) -> str:
         """The name of the robot model."""
         return "iiwa"
+    
+    @property
+    def slider_model_name(self) -> str:
+        """The name of the robot model."""
+        return "t_pusher"
+    
+    def get_station_plant(self):
+        return self.station_plant
+
+    def get_scene_graph(self):
+        ...
+    
+    def get_slider(self):
+        return self.slider
+    
+    def get_meshcat(self):
+        return self._meshcat
