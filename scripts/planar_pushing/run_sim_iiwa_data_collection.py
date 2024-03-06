@@ -90,7 +90,11 @@ def run_sim(
         lam_min=0.2,
     )
     # camera set up
-    zoom = .9
+
+    print(f"Initial finger pose: {traj.initial_pusher_planar_pose}")
+    print(f"Target slider pose: {traj.target_slider_planar_pose}")
+
+    zoom = 1.0
     position = np.array([0.5 + traj.target_slider_planar_pose.x, 0, 0.5]) / zoom
     center_of_view = np.array([traj.target_slider_planar_pose.x, 0.0, 0.0])
     angle = 0.9*np.arctan((position[0]-center_of_view[0])/(position[2]-center_of_view[2]))
