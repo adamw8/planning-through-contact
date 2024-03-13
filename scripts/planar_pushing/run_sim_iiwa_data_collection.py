@@ -182,6 +182,8 @@ def run_sim(
         if save_recording
         else None
     )
+    recording_name = "iiwa_bad_training_example.html"
+
     environment.export_diagram("environment_diagram.pdf")
     environment.simulate(
         traj.end_time + sim_config.delay_before_execution + 0.5,
@@ -224,7 +226,7 @@ if __name__ == "__main__":
         print(f"state estimator meshcat")
         state_estimator_meshcat = StartMeshcat()
         run_sim(
-            plan="data_collection_trajectories_tee_v3/run_0/traj_3/trajectory/traj_rounded.pkl",
+            plan="data_collection_trajectories_tee_v1/run_0/traj_1/trajectory/traj_rounded.pkl",
             save_recording=True,
             debug=False,
             station_meshcat=station_meshcat,

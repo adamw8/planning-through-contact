@@ -512,8 +512,7 @@ if __name__ == "__main__":
         # update config
         config.contact_config.lam_min = 0.2
         config.contact_config.lam_max = 1-config.contact_config.lam_min
-        config.non_collision_cost.distance_to_object_socp = \
-            2.0 if slider_type == "box" else 0.25
+        config.non_collision_cost.distance_to_object_socp = 0.25
 
         output_dir = f"data_collection_trajectories_{slider_type}"
         if os.path.exists(output_dir):
@@ -542,7 +541,8 @@ if __name__ == "__main__":
             config,
             (0.575, 0.0),
             init_pusher_pose=PlanarPose(0.575, 0.25, 0.0),
-            limit_rotations=True if slider_type == "box" else False,
+            # limit_rotations=True if slider_type == "box" else False,
+            limit_rotations=False,
             # noise_final_pose=True,
             noise_final_pose=False,
         )
