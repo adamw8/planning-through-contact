@@ -81,9 +81,9 @@ class DiffusionPolicyController(LeafSystem):
         self._B = 1 # batch size is 1
 
         # indexing parameters for action predictions
-        # self._end = self._start + self._action_steps + 4
         self._start = self._obs_horizon-1
         self._end = self._start + self._action_steps
+        # self._end += 4
         # Hack to ensure backward compatibility with version 2 checkpoints
         # Version 2 checkpoints did not used shifted actions
         if 'push_tee_v2' in checkpoint:

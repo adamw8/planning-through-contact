@@ -95,8 +95,8 @@ def run_sim(
         X_PB=Transform(
             RigidTransform(
                 RotationMatrix.MakeXRotation(np.pi),
-                np.array([traj.target_pusher_planar_pose.x, 
-                          traj.target_pusher_planar_pose.y,
+                np.array([traj.target_slider_planar_pose.x, 
+                          traj.target_slider_planar_pose.y,
                           1.0]
                 )
             )
@@ -363,7 +363,7 @@ if __name__ == "__main__":
     if args.checkpoint is None:
         # checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/push_tee_v1_sc/checkpoints/epoch_148.ckpt'
         # checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/push_tee_v2/checkpoints/working_better.ckpt'
-        checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/push_tee_v2/checkpoints/checkpoints_to_test/epoch=0250-val_loss=0.033619.ckpt'
+        checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/push_box_v2/checkpoints/latest.ckpt'
         # checkpoint='/home/adam/workspace/gcs-diffusion/data/outputs/push_tee_v2/checkpoints/epoch=0695-val_loss=0.035931.ckpt'
     else:
         checkpoint = args.checkpoint
@@ -372,7 +372,7 @@ if __name__ == "__main__":
     station_meshcat = StartMeshcat()
     # plan path is used to extract sim_config
     # the trajectory in plan path is not used
-    plan = "data_collection_trajectories_tee_v3/run_0/traj_0/trajectory/traj_rounded.pkl"
+    plan = "data_collection_trajectories_box_v2/run_0/traj_0/trajectory/traj_rounded.pkl"
     run_sim(
         plan=plan,
         checkpoint=checkpoint,

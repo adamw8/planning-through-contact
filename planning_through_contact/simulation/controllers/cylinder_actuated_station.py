@@ -184,7 +184,10 @@ class CylinderActuatedStation(RobotSystemBase):
     @property
     def slider_model_name(self) -> str:
         """The name of the robot model."""
-        return "t_pusher"
+        if self._sim_config.slider.name == "box":
+            return "box"
+        else:
+            return "t_pusher"
     
     def get_station_plant(self):
         return self.station_plant

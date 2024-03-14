@@ -185,14 +185,15 @@ class OutputFeedbackTableEnvironment:
             # used for reseting environment
             self._workspace = PlanarPushingWorkspace(
                 slider=BoxWorkspace(
-                        width=0.35,
-                        height=0.5,
-                        center=np.array([0.5, 0.0]),
+                        width=0.3, # 0.35,
+                        height=0.4, # 0.5,
+                        center=np.array([sim_config.slider_goal_pose.x, 
+                                         sim_config.slider_goal_pose.y]),
                         buffer=0,
                     ),
                 )
             self._plan_config = get_default_plan_config(
-                slider_type='tee',
+                slider_type='box' if sim_config.slider.name == 'box' else 'tee',
                 pusher_radius=0.015,
                 hardware=False,
             )
@@ -461,9 +462,13 @@ class OutputFeedbackTableEnvironment:
         reached_pusher_target_pose = target_pusher_pose.x-2*trans_tol <= pusher_pose.x <= target_pusher_pose.x+2*trans_tol and \
             target_pusher_pose.y-2*trans_tol <= pusher_pose.y <= target_pusher_pose.y+2*trans_tol
 
-        reached_slider_target_pose = target_slider_pose.x-trans_tol <= slider_pose.x <= target_slider_pose.x+trans_tol and \
-            target_slider_pose.y-trans_tol <= slider_pose.y <= target_slider_pose.y+trans_tol and \
-            target_slider_pose.theta-rot_tol <= slider_pose.theta <= target_slider_pose.theta+rot_tol
+        if self._sim_config.slider.name == "box":
+            reached_slider_target_pose = target_slider_pose.x-trans_tol <= slider_pose.x <= target_slider_pose.x+trans_tol and \
+                target_slider_pose.y-trans_tol <= slider_pose.y <= target_slider_pose.y+trans_tol
+        else:
+            reached_slider_target_pose = target_slider_pose.x-trans_tol <= slider_pose.x <= target_slider_pose.x+trans_tol and \
+                target_slider_pose.y-trans_tol <= slider_pose.y <= target_slider_pose.y+trans_tol and \
+                target_slider_pose.theta-rot_tol <= slider_pose.theta <= target_slider_pose.theta+rot_tol
 
         if reached_pusher_target_pose and reached_slider_target_pose:
         # if reached_slider_target_pose:

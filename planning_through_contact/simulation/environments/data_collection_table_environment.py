@@ -447,10 +447,10 @@ class DataCollectionTableEnvironment:
                 control_desired_log,
             )
             combined = CombinedPlanarPushingLogs(
-                pusher_actual=pusher_actual,
-                slider_actual=slider_actual,
-                pusher_desired=pusher_desired,
-                slider_desired=slider_desired,
+                pusher_actual=pusher_actual,    # pusher_pose_estimated from StateEstimator
+                slider_actual=slider_actual,    # slider_pose_estimated from StateEstimator, mpc_control from PositionSource
+                pusher_desired=pusher_desired,  # planar_position_command from PositionSource
+                slider_desired=slider_desired,  # desired_slider_planar_pose_vector from PositionSource, mpc_control_desired from PositionSource
             )
 
             # assumes that a directory for this trajectory has already been
