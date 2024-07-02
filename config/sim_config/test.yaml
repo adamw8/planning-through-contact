@@ -135,7 +135,7 @@ data_collection_config:
   render_plans: true
   convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
-  plans_dir: 'trajectories/test'
+  plans_dir: 'trajectories/test_1'
   rendered_plans_dir: 'trajectories_rendered/test'
   zarr_path: 'trajectories_rendered/iiwa_cotrain_data.zarr'
   policy_freq: 10.0
@@ -162,12 +162,12 @@ data_collection_config:
       - ${slider_goal_pose.y}
     buffer: 0.0
     seed: 0
-    num_plans: 25
+    num_plans: 1
     pusher_start_pose: ${pusher_start_pose}
     slider_goal_pose: ${slider_goal_pose}
     limit_rotations: false
     noise_final_pose: true
-    num_unique_plans: 2
+    num_unique_plans: 1
     sort_plans: true
   ## Supercloud
   LLSUB_RANK: null

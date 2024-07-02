@@ -36,6 +36,8 @@ manipulation = "2024.1.01"
 pyvirtualdisplay = "^3.0"
 scipy = "^1.13.0"
 wandb = "^0.17.0"
+underactuated = "^2024.4.27"
+pyyaml = "^6.0.1"
 
 [tool.poetry.dev-dependencies]
 
@@ -45,6 +47,7 @@ pre-commit = "^3.4.0"
 black = "^23.12.1"
 isort = "^5.12.0"
 poetry-pre-commit-plugin = "^0.1.2"
+natsort = "^8.4.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

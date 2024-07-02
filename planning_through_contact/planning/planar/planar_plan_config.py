@@ -84,16 +84,7 @@ class SliderPusherSystemConfig:
     @cached_property
     def max_contact_radius(self) -> float:
         geometry = self.slider.geometry
-        if (
-            isinstance(geometry, Box2d)
-            or isinstance(geometry, TPusher2d)
-            or isinstance(geometry, ArbitraryShape2D)
-        ):
-            return np.sqrt((geometry.width / 2) ** 2 + (geometry.height) ** 2)
-        else:
-            raise NotImplementedError(
-                f"max_contact_radius for {type(geometry)} is not implemented"
-            )
+        return geometry.max_contact_radius
 
     @cached_property
     def tau_max(self) -> float:
@@ -162,22 +153,17 @@ class PlanarSolverParams:
 
 @dataclass
 class NonCollisionCost:
-    distance_to_object_socp: Optional[float] = None
+    distance_to_object: Optional[float] = None
     # NOTE: The single mode is only used to test one non-collision mode at a time
-    distance_to_object_socp_single_mode: Optional[float] = None
     pusher_velocity_regularization: Optional[float] = None
     pusher_velocity_constraint: Optional[
         float
     ] = None  # TODO: move this (it is not a cost, as the name of the class entails it should be)
     pusher_arc_length: Optional[float] = None
-    time: Optional[float] = None
 
     @property
     def avoid_object(self) -> bool:
-        return (
-            self.distance_to_object_socp is not None
-            or self.distance_to_object_socp_single_mode is not None
-        )
+        return self.distance_to_object is not None
 
     def __str__(self) -> str:
         field_strings = [

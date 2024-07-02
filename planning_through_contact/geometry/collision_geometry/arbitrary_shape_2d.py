@@ -64,6 +64,10 @@ class ArbitraryShape2D(CollisionGeometry):
     def from_drake(cls, drake_shape: DrakeShape):
         raise NotImplementedError()
 
+    @property
+    def max_contact_radius(self) -> float:
+        return np.sqrt((self.width / 2) ** 2 + (self.height) ** 2)
+
     @cached_property
     def com_offset(self) -> npt.NDArray[np.float64]:
         boxes = load_primitive_info(self.arbitrary_shape_pickle_path)
