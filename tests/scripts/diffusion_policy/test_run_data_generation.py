@@ -8,7 +8,7 @@ PYTHON_SCRIPT = "scripts/planar_pushing/diffusion_policy/run_data_generation.py"
 
 @pytest.fixture
 def config_path() -> str:
-    return "test_sim_config.yaml"
+    return "test_data_generation_sim_config.yaml"
 
 
 @pytest.fixture
