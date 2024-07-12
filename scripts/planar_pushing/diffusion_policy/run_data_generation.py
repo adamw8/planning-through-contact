@@ -132,9 +132,8 @@ def generate_plans(data_collection_config: DataCollectionConfig, cfg: OmegaConf)
     solver_params = get_default_solver_params(debug=False, clarabel=False)
     config.contact_config.lam_min = _plan_config.contact_lam_min
     config.contact_config.lam_max = _plan_config.contact_lam_max
-    config.non_collision_cost.distance_to_object_socp = (
-        _plan_config.distance_to_object_socp
-    )
+    config.non_collision_cost.distance_to_object = _plan_config.distance_to_object
+    print(config.non_collision_cost)
 
     ## Set up workspace
     workspace = PlanarPushingWorkspace(

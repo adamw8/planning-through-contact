@@ -112,7 +112,7 @@ data_collection_config:
     pusher_radius: 0.015
     contact_lam_min: 0.2
     contact_lam_max: 0.8
-    distance_to_object_socp: 0.25
+    distance_to_object: 0.25
     width: 0.35
     height: 0.5
     center:

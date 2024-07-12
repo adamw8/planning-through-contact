@@ -64,7 +64,7 @@ class MultiRunConfig:
         # Dummy values that aren't actually used
         config.contact_config.lam_min = 0.15
         config.contact_config.lam_max = 0.85
-        config.non_collision_cost.distance_to_object_socp = 0.25
+        config.non_collision_cost.distance_to_object = 0.25
 
         # Get initial slider poses
         workspace = PlanarPushingWorkspace(

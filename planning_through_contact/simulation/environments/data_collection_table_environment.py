@@ -68,7 +68,7 @@ class PlanConfig:
     # Solver
     contact_lam_min: float
     contact_lam_max: float
-    distance_to_object_socp: float
+    distance_to_object: float
 
     # Workspace
     width: float
