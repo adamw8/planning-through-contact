@@ -54,8 +54,12 @@ def contact_scene_def() -> ContactSceneDefinition:
     loc_table = PolytopeContactLocation(ContactLocation.FACE, 0)
     loc_box_table = PolytopeContactLocation(ContactLocation.VERTEX, 2)
 
-    box_table = ContactPairDefinition("box_table", box, loc_box_table, table, loc_table)
-    box_robot = ContactPairDefinition("box_robot", box, loc_box_robot, robot, loc_robot)
+    box_table = ContactPairDefinition(
+        "box_table", box, loc_box_table, table, loc_table, friction_coeff=0.5
+    )
+    box_robot = ContactPairDefinition(
+        "box_robot", box, loc_box_robot, robot, loc_robot, friction_coeff=0.5
+    )
 
     scene_def = ContactSceneDefinition(
         [table, box, robot],

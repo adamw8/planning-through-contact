@@ -33,10 +33,10 @@ def contact_scene_def() -> ContactSceneDefinition:
     loc_box_table = PolytopeContactLocation(ContactLocation.VERTEX, 2)
 
     face_contact = ContactPairDefinition(
-        "contact_1", box, loc_box_robot, robot, loc_robot
+        "contact_1", box, loc_box_robot, robot, loc_robot, friction_coeff=0.5
     )
     point_contact = ContactPairDefinition(
-        "contact_2", box, loc_box_table, table, loc_table
+        "contact_2", box, loc_box_table, table, loc_table, friction_coeff=0.5
     )
 
     scene_def = ContactSceneDefinition(

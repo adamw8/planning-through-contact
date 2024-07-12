@@ -13,7 +13,7 @@ def visualize_plan(debug: bool = False):
     traj = PlanarPushingTrajectory.load(plan)
 
     if "box" in plan:
-        slider = get_box()
+        slider = get_box(mass=0.1)
         body = "box"
     elif "t_pusher" in plan:
         slider = get_tee()

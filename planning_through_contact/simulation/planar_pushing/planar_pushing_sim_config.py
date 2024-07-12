@@ -58,10 +58,10 @@ class MultiRunConfig:
             slider_type=slider_type,
             arbitrary_shape_pickle_path=arbitrary_shape_pickle_path,
             pusher_radius=0.015,
-            hardware=False,
+            use_case="normal",
             slider_physical_properties=slider_physical_properties,
         )
-        # update config (probably don't need these)
+        # Dummy values that aren't actually used
         config.contact_config.lam_min = 0.15
         config.contact_config.lam_max = 0.85
         config.non_collision_cost.distance_to_object_socp = 0.25
@@ -303,6 +303,7 @@ class PlanarPushingSimConfig:
 
         return (
             self.slider == other.slider
+            and self.slider_physical_properties == other.slider_physical_properties
             and self.dynamics_config == other.dynamics_config
             and self.contact_model == other.contact_model
             and self.visualize_desired == other.visualize_desired

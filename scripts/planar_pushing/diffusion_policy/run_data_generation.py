@@ -126,7 +126,7 @@ def generate_plans(data_collection_config: DataCollectionConfig, cfg: OmegaConf)
         slider_type=_plan_config.slider_type,
         arbitrary_shape_pickle_path=_plan_config.arbitrary_shape_pickle_path,
         pusher_radius=_plan_config.pusher_radius,
-        hardware=False,
+        use_case="normal",
         slider_physical_properties=hydra.utils.instantiate(cfg.physical_properties),
     )
     solver_params = get_default_solver_params(debug=False, clarabel=False)

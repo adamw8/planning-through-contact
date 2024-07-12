@@ -14,6 +14,7 @@ from pydrake.systems.sensors import CameraConfig
 
 from planning_through_contact.experiments.utils import (
     get_box,
+    get_default_physical_properties,
     get_default_plan_config,
     get_tee,
 )
@@ -45,6 +46,7 @@ def multi_run_config() -> MultiRunConfig:
         max_attempt_duration=100,
         seed=163,
         slider_type="box",
+        arbitrary_shape_pickle_path=None,
         pusher_start_pose=PlanarPose(x=0.5, y=0.25, theta=0.0),
         slider_goal_pose=PlanarPose(x=0.5, y=0.0, theta=0.0),
         workspace_width=0.5,
@@ -63,7 +65,7 @@ def diffusion_policy_config() -> DiffusionPolicyConfig:
 
 @pytest.fixture()
 def sim_config() -> PlanarPushingSimConfig:
-    slider = get_box()
+    slider = get_box(mass=0.1)
     dynamics_config = SliderPusherSystemConfig(
         pusher_radius=0.015,
         friction_coeff_table_slider=0.5,
@@ -77,13 +79,12 @@ def sim_config() -> PlanarPushingSimConfig:
     return PlanarPushingSimConfig(
         dynamics_config=dynamics_config,
         slider=slider,
+        slider_physical_properties=get_default_physical_properties(),
         contact_model=ContactModel.kHydroelastic,
         visualize_desired=True,
         slider_goal_pose=PlanarPose(x=0.5, y=0.0, theta=0.0),
         pusher_start_pose=PlanarPose(x=0.5, y=0.25, theta=0.0),
-        default_joint_positions=np.array(
-            [0.0776, 1.0562, 0.3326, -1.3048, 2.7515, -0.8441, 0.5127]
-        ),
+        default_joint_positions=np.array([0.41, 0.88, -0.65, -1.45, 0.59, 1.01, 2.76]),
         time_step=0.001,
         closed_loop=False,
         draw_frames=True,
@@ -94,7 +95,12 @@ def sim_config() -> PlanarPushingSimConfig:
             checkpoint="checkpoint",
             initial_pusher_pose=PlanarPose(x=0.5, y=0.25, theta=0.0),
             target_slider_pose=PlanarPose(x=0.5, y=0.0, theta=0.0),
-            cfg_overrides={"n_actions": 8},
+            diffusion_policy_path="path",
+            freq=10.0,
+            delay=5.0,
+            debug=False,
+            device="cuda:0",
+            cfg_overrides={"n_action_steps": 8},
         ),
         use_hardware=False,
         pusher_z_offset=0.03,
@@ -103,14 +109,22 @@ def sim_config() -> PlanarPushingSimConfig:
         multi_run_config=MultiRunConfig(
             num_runs=1,
             max_attempt_duration=100,
+            arbitrary_shape_pickle_path=None,
             seed=163,
             slider_type="box",
             pusher_start_pose=PlanarPose(x=0.5, y=0.25, theta=0.0),
             slider_goal_pose=PlanarPose(x=0.5, y=0.0, theta=0.0),
             workspace_width=0.5,
             workspace_height=0.5,
+            trans_tol=0.02,
+            rot_tol=5,
+            evaluate_final_pusher_position=True,
+            evaluate_final_slider_rotation=True,
+            slider_physical_properties=get_default_physical_properties(),
         ),
         scene_directive_name="planar_pushing_iiwa_plant_hydroelastic.yaml",
+        camera_randomization=False,
+        domain_randomization=False,
     )
 
 
@@ -122,4 +136,7 @@ def test_from_yaml(sim_config):
     sim_config_from_yaml = PlanarPushingSimConfig.from_yaml(
         OmegaConf.load("tests/simulation/planar_pushing/test_sim_config.yaml")
     )
+    print(sim_config.diffusion_policy_config)
+    print()
+    print(sim_config_from_yaml.diffusion_policy_config)
     assert sim_config == sim_config_from_yaml

@@ -349,6 +349,19 @@ def get_default_experiment_plans(
     return plans
 
 
+def get_default_physical_properties() -> PhysicalProperties:
+    return PhysicalProperties(
+        mass=0.1,
+        inertia=[[1e-5, 0.0, 0.0], [0.0, 1e-5, 0.0], [0.0, 0.0, 1e-5]],
+        center_of_mass=None,
+        is_compliant=True,
+        hydroelastic_modulus=1.0e6,
+        mu_dynamic=0.5,
+        mu_static=0.5,
+        mesh_resolution_hint=0.01,
+    )
+
+
 def run_ablation_with_default_config(
     slider_type: Literal["box", "sugar_box", "tee"],
     pusher_radius: float,

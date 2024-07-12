@@ -31,7 +31,9 @@ def test_contact_pair_face_on_face():
     robot = RigidBody("robot", Box2d(0.05, 0.03), mass=0.03)
     loc_robot = PolytopeContactLocation(ContactLocation.FACE, 1)
 
-    pair_def = ContactPairDefinition("pair", box, loc_box, robot, loc_robot)
+    pair_def = ContactPairDefinition(
+        "pair", box, loc_box, robot, loc_robot, friction_coeff=0.5
+    )
 
     pair = pair_def.create_pair(ContactMode.ROLLING)
 
@@ -95,7 +97,9 @@ def test_contact_pair_point_on_face():
     robot = RigidBody("robot", Box2d(0.05, 0.03), mass=0.03)
     loc_robot = PolytopeContactLocation(ContactLocation.VERTEX, 2)
 
-    pair_def = ContactPairDefinition("pair", box, loc_box, robot, loc_robot)
+    pair_def = ContactPairDefinition(
+        "pair", box, loc_box, robot, loc_robot, friction_coeff=0.5
+    )
 
     pair = pair_def.create_pair(ContactMode.ROLLING)
 

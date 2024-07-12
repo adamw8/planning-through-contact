@@ -480,7 +480,6 @@ def test_trajectory_segment_two_feet_different_stones() -> None:
     for terrain, segment in zip(
         (terrain_1, terrain_2), (segment_step_up, segment_step_down)
     ):
-
         initial_pos = np.array([0.95, cfg.robot.desired_com_height])
         target_pos = np.array([1.05, cfg.robot.desired_com_height + step_diff])
 

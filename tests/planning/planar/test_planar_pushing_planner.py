@@ -359,6 +359,7 @@ def test_make_plan_band_sparsity_box(
     assert result.is_success()
 
     path = planner.plan_path(solver_params)
+    print(path)
     traj = path.to_traj()
 
     assert_initial_and_final_poses(
