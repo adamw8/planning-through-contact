@@ -136,9 +136,7 @@ def generate_plans(data_collection_config: DataCollectionConfig, cfg: OmegaConf)
         config.contact_config.cost.ang_velocity_regularization = (
             _plan_config.ang_velocity_regularization
         )
-    config.non_collision_cost.distance_to_object_socp = (
-        _plan_config.distance_to_object_socp
-    )
+    config.non_collision_cost.distance_to_object = _plan_config.distance_to_object
 
     ## Set up workspace
     workspace = PlanarPushingWorkspace(
