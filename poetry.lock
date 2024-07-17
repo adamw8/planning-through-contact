@@ -800,18 +800,18 @@ six = ">=1.4.0"
 
 [[package]]
 name = "drake"
-version = "1.28.0"
+version = "1.30.0"
 description = "Model-based design and verification for robotics"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "drake-1.28.0-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:52736b7fad15069c5c071a1bdf247c32b813cd73977e8bb690b50b129c230340"},
-    {file = "drake-1.28.0-cp311-cp311-macosx_12_0_x86_64.whl", hash = "sha256:10670b8f63d88e72da19f09598aaa5016e3e6211d186691deaeb8f9f203d32db"},
-    {file = "drake-1.28.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:31dc1aead2dbeee06c073164f76fc93b5db11f1a12d4ebaca700e9e2fb3fb319"},
-    {file = "drake-1.28.0-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:d530cf37055b2058a86798c6ecde8179a3b3e0a9bb36c5703a37233f54bd7d95"},
-    {file = "drake-1.28.0-cp312-cp312-macosx_12_0_x86_64.whl", hash = "sha256:ffcdfb7c957ead6bec43766b101811a9968a44bf8f19cf5044fbe10131092d4a"},
-    {file = "drake-1.28.0-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:7bf7ecdc26450177f79f0a3816eb1ce360cffff0a2fcdfb76947a6f9dbed306b"},
-    {file = "drake-1.28.0-cp312-cp312-manylinux_2_35_x86_64.whl", hash = "sha256:81dcbf7133029dd5963a4599cfaee88169c3a0941d17e68bb23227ca5cebbea3"},
+    {file = "drake-1.30.0-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:7c4b050764a403bc73996f4791256387caf659a62bd3a96a697127d4d9a0995e"},
+    {file = "drake-1.30.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:e1a8a68a579d2d9d84c46ec5c4df58b7ef689289a468a8265f623a8025abf75f"},
+    {file = "drake-1.30.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:8080e7b873e448576ae6706bb749bcb2ad4333ce5dfed6b8b55ff809bed575d2"},
+    {file = "drake-1.30.0-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:87b96065cc79cd63656b0d80e4adb3614851b72d8be85103552965c913d6714b"},
+    {file = "drake-1.30.0-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:b38660249d861aec160314f04ef16c77dca98a2d721fd1307d213e90d78eb321"},
+    {file = "drake-1.30.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:61aa08841cf332003536576ae0b14b5236b212738cb7eddbc7860b7ec8b4b706"},
+    {file = "drake-1.30.0-cp312-cp312-manylinux_2_35_x86_64.whl", hash = "sha256:8fbfd3f0c2f16daa492246802d7b5dca89d8198319ab9f6320b88518c62157da"},
 ]
 
 [package.dependencies]
@@ -930,13 +930,13 @@ files = [
 
 [[package]]
 name = "exceptiongroup"
-version = "1.2.1"
+version = "1.2.2"
 description = "Backport of PEP 654 (exception groups)"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "exceptiongroup-1.2.1-py3-none-any.whl", hash = "sha256:5258b9ed329c5bbdd31a309f53cbfb0b155341807f6ff7606a1e801a891b29ad"},
-    {file = "exceptiongroup-1.2.1.tar.gz", hash = "sha256:a4785e48b045528f5bfe627b6ad554ff32def154f42372786903b7abcfe1aa16"},
+    {file = "exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b"},
+    {file = "exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"},
 ]
 
 [package.extras]
@@ -1357,13 +1357,13 @@ numpy = ">=1.17.3"
 
 [[package]]
 name = "huggingface-hub"
-version = "0.23.4"
+version = "0.23.5"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "huggingface_hub-0.23.4-py3-none-any.whl", hash = "sha256:3a0b957aa87150addf0cc7bd71b4d954b78e749850e1e7fb29ebbd2db64ca037"},
-    {file = "huggingface_hub-0.23.4.tar.gz", hash = "sha256:35d99016433900e44ae7efe1c209164a5a81dbbcd53a52f99c281dcd7ce22431"},
+    {file = "huggingface_hub-0.23.5-py3-none-any.whl", hash = "sha256:d7a7d337615e11a45cc14a0ce5a605db6b038dc24af42866f731684825226e90"},
+    {file = "huggingface_hub-0.23.5.tar.gz", hash = "sha256:67a9caba79b71235be3752852ca27da86bd54311d2424ca8afdb8dda056edf98"},
 ]
 
 [package.dependencies]
@@ -4221,13 +4221,13 @@ jeepney = ">=0.6"
 
 [[package]]
 name = "sentry-sdk"
-version = "2.9.0"
+version = "2.10.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sentry_sdk-2.9.0-py2.py3-none-any.whl", hash = "sha256:0bea5fa8b564cc0d09f2e6f55893e8f70286048b0ffb3a341d5b695d1af0e6ee"},
-    {file = "sentry_sdk-2.9.0.tar.gz", hash = "sha256:4c85bad74df9767976afb3eeddc33e0e153300e887d637775a753a35ef99bee6"},
+    {file = "sentry_sdk-2.10.0-py2.py3-none-any.whl", hash = "sha256:87b3d413c87d8e7f816cc9334bff255a83d8b577db2b22042651c30c19c09190"},
+    {file = "sentry_sdk-2.10.0.tar.gz", hash = "sha256:545fcc6e36c335faa6d6cda84669b6e17025f31efbf3b2211ec14efe008b75d1"},
 ]
 
 [package.dependencies]
@@ -4893,20 +4893,21 @@ files = [
 
 [[package]]
 name = "underactuated"
-version = "2024.4.27"
+version = "2024.6.22"
 description = "MIT 6.821 - Underactuated Robotics"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "underactuated-2024.4.27-py3-none-any.whl", hash = "sha256:4c5155c40afce8ea993340b109da18d87581ae9d68ee587f332a1ac6cd7bbb2c"},
-    {file = "underactuated-2024.4.27.tar.gz", hash = "sha256:81092ead3974c903602573eacfa8ececf4beb7548c1d0470f9183d1e72d6cc82"},
+    {file = "underactuated-2024.6.22-py3-none-any.whl", hash = "sha256:36fd783ff4ce715d653a35052540659df360aeb07e31e304e65bff0038b22103"},
+    {file = "underactuated-2024.6.22.tar.gz", hash = "sha256:1ca687bc37e356f1b6a022ef9e3336293a7ef13c5b8dca973b1cbf5938ac5cf4"},
 ]
 
 [package.dependencies]
-drake = ">=1.28.0"
+drake = ">=1.30.0"
 gradescope-utils = ">=0.4.0"
 ipywidgets = ">7"
 mpld3 = ">=0.5.1"
+numpy = "<2.0.0"
 pandas = ">=2.0"
 pydot = ">=1.3.0"
 scipy = ">=1.10.0"
@@ -5253,4 +5254,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10, <3.11"
-content-hash = "7fce11b94e57883d19a52634c86b73762ee376f51139a688b4cad8f8cfc4c03c"
+content-hash = "4a2e2fd9453f65266f297a6c199ac23cdda8b01d10ce93fa69c67298f537b3d8"
