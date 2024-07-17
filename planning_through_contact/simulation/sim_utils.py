@@ -132,7 +132,7 @@ def AddRandomizedSliderAndConfigureContact(
     sim_config,
     plant,
     scene_graph,
-    default_color=[0.2, 0.2, 0.2],
+    default_color=[0.1, 0.1, 0.1],
     color_range=0.02,
 ) -> ModelInstanceIndex:
     parser = Parser(plant, scene_graph)
@@ -155,12 +155,11 @@ def AddRandomizedSliderAndConfigureContact(
 
     diffuse_elements = root.xpath("//model/link/visual/material/diffuse")
 
-    R = clamp(default_color[0] + np.random.uniform(-color_range, color_range), 0.0, 1.0)
-    G = clamp(default_color[1] + np.random.uniform(-color_range, color_range), 0.0, 1.0)
-    B = clamp(default_color[2] + np.random.uniform(-color_range, color_range), 0.0, 1.0)
-    A = 1  # assuming fully opaque
+    slider_color = random_rgba_from_color_range(default_color, color_range)
 
-    new_diffuse_value = f"{R} {G} {B} {A}"
+    new_diffuse_value = (
+        f"{slider_color.r()} {slider_color.g()} {slider_color.b()} {slider_color.a()}"
+    )
     for diffuse in diffuse_elements:
         diffuse.text = new_diffuse_value
 
@@ -177,9 +176,10 @@ def AddRandomizedSliderAndConfigureContact(
 
 
 def randomize_table(
-    default_color=[0.55, 0.55, 0.55],
+    default_color=[0.7, 0.7, 0.7],
     color_range=0.02,
     table_urdf: str = "small_table_hydroelastic.urdf",
+    texture_randomization_ratio: float = 0.0,
 ) -> None:
     base_urdf = f"{models_folder}/{table_urdf}"
     parser = etree.XMLParser(recover=True)
@@ -189,7 +189,7 @@ def randomize_table(
     rv = np.random.uniform(0, 1)
     import random
 
-    if rv < 0.3:
+    if rv < texture_randomization_ratio:
         image_dir = f"{models_folder}/images"
         image_files = os.listdir(image_dir)
         image_file = random.choice(image_files)
@@ -198,18 +198,11 @@ def randomize_table(
         texture = etree.SubElement(material[0], "texture")
         texture.set("filename", f"{models_folder}/images/{image_file}")
     else:
-        R = clamp(
-            default_color[0] + np.random.uniform(-color_range, color_range), 0.0, 1.0
+        table_color = random_rgba_from_color_range(default_color, color_range)
+        new_color_value = (
+            f"{table_color.r()} {table_color.g()} {table_color.b()} {table_color.a()}"
         )
-        G = clamp(
-            default_color[1] + np.random.uniform(-color_range, color_range), 0.0, 1.0
-        )
-        B = clamp(
-            default_color[2] + np.random.uniform(-color_range, color_range), 0.0, 1.0
-        )
-        A = 1  # assuming fully opaque
-        new_color_value = f"{R} {G} {B} {A}"
-        models = root.xpath('//materialz[@name="LightGrey"]')
+        models = root.xpath('//material[@name="LightGrey"]')
         for model in models:
             for color in model:
                 color.set("rgba", new_color_value)
@@ -229,7 +222,7 @@ def randomize_table(
 
 
 def randomize_pusher(
-    default_color=[1.0, 0.45, 0.14],
+    default_color=[1.0, 0.345, 0.1],
     color_range=0.02,
     pusher_sdf: str = "pusher_floating_hydroelastic.sdf",
 ) -> None:
@@ -241,13 +234,10 @@ def randomize_pusher(
 
     diffuse_elements = root.xpath("//model/link/visual/material/diffuse")
 
-    R = clamp(default_color[0] + np.random.uniform(-color_range, color_range), 0.0, 1.0)
-    G = clamp(default_color[1] + np.random.uniform(-color_range, color_range), 0.0, 1.0)
-    B = clamp(default_color[2] + np.random.uniform(-color_range, color_range), 0.0, 1.0)
-    A = 1  # assuming fully opaque
+    pusher_color = random_rgba_from_color_range(default_color, color_range)
 
     new_diffuse_value = (
-        f"{R} {G} {B} {A}"  # Example: changing diffuse to white (R G B A)
+        f"{pusher_color.r()} {pusher_color.g()} {pusher_color.b()} {pusher_color.a()}"
     )
     for diffuse in diffuse_elements:
         diffuse.text = new_diffuse_value
@@ -263,27 +253,51 @@ def clamp(val, min_val, max_val):
     return max(min(val, max_val), min_val)
 
 
-def randomize_camera_config(camera_config):
+def randomize_camera_config(
+    camera_config, translation_limit=0.01, rot_limit_deg=1.0, arbitrary_background=False
+):
     # Randomize camera location
     new_camera_config = copy.deepcopy(camera_config)
     camera_pose = camera_config.X_PB.GetDeterministicValue()
 
-    new_xyz = np.random.normal(camera_pose.translation(), 0.01, 3)
-    rpy = camera_pose.rotation().ToRollPitchYaw()
-    rot_std = 2 * np.pi / 180
-    new_rpy = RollPitchYaw(
-        np.random.normal(rpy.roll_angle(), rot_std),
-        np.random.normal(rpy.pitch_angle(), rot_std),
-        np.random.normal(rpy.yaw_angle(), rot_std),
+    new_xyz = camera_pose.translation() + np.random.uniform(
+        -translation_limit, translation_limit, 3
     )
-
+    rpy = camera_pose.rotation().ToRollPitchYaw()
+    rot_limit_rad = rot_limit_deg * np.pi / 180
+    new_rpy = RollPitchYaw(
+        rpy.roll_angle() + np.random.uniform(-rot_limit_rad, rot_limit_rad),
+        rpy.pitch_angle() + np.random.uniform(-rot_limit_rad, rot_limit_rad),
+        rpy.yaw_angle() + np.random.uniform(-rot_limit_rad, rot_limit_rad),
+    )
     new_camera_config.X_PB = Transform(RigidTransform(new_rpy, new_xyz))
 
     # randomize the background color
-    new_rgb = np.random.uniform(0, 1, 3)
-    new_camera_config.background = Rgba(new_rgb[0], new_rgb[1], new_rgb[2], 1)
+    if arbitrary_background:
+        new_rgb = np.random.uniform(0, 1, 3)
+        new_camera_config.background = Rgba(new_rgb[0], new_rgb[1], new_rgb[2], 1)
+    else:
+        new_camera_config.background = random_rgba_from_color_range(
+            camera_config.background, 0.05
+        )
 
     return new_camera_config
+
+
+def random_rgba_from_color_range(base_color, color_range):
+    if isinstance(base_color, Rgba):
+        r = base_color.r()
+        g = base_color.g()
+        b = base_color.b()
+    else:
+        r = base_color[0]
+        g = base_color[1]
+        b = base_color[2]
+    R = clamp(r + np.random.uniform(-color_range, color_range), 0.0, 1.0)
+    G = clamp(g + np.random.uniform(-color_range, color_range), 0.0, 1.0)
+    B = clamp(b + np.random.uniform(-color_range, color_range), 0.0, 1.0)
+    A = 1  # assuming fully opaque
+    return Rgba(R, G, B, A)
 
 
 ## Collision checkers for computing initial slider and pusher poses

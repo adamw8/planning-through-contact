@@ -136,7 +136,7 @@ def create_arbitrary_shape_sdf_file(cfg: OmegaConf, sim_config: PlanarPushingSim
         model_name="arbitrary",
         base_link_name="arbitrary",
         is_hydroelastic="hydroelastic" in cfg.contact_model.lower(),
-        rgba=[0.0, 0.0, 0.0, 1.0],
+        rgba=sim_config.arbitrary_shape_rgba,
         com_override=[0.0, 0.0, 0.0],  # Plan assumes that object frame = CoM frame
     )
 
