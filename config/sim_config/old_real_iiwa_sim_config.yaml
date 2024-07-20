@@ -91,7 +91,7 @@ camera_configs:
     focal_y: 616.777
     show_rgb: false
 camera_randomization: false
-domain_randomization: false
+domain_randomization_color_range: 0.0
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig

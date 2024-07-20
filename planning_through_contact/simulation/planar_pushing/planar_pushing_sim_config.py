@@ -156,7 +156,7 @@ class PlanarPushingSimConfig:
     use_hardware: bool = False
     pusher_z_offset: float = 0.05
     camera_configs: List[CameraConfig] = None
-    domain_randomization: bool = False
+    domain_randomization_color_range: float = 0.0
     log_dir: str = (
         None  # directory for logging rollouts from output_feedback_table_environments
     )
@@ -218,7 +218,7 @@ class PlanarPushingSimConfig:
             use_hardware=cfg.use_hardware,
             pusher_z_offset=cfg.pusher_z_offset,
             log_dir=cfg.log_dir,
-            domain_randomization=cfg.domain_randomization,
+            domain_randomization_color_range=cfg.domain_randomization_color_range,
             slider_physical_properties=slider_physical_properties,
             arbitrary_shape_rgba=np.array(cfg.arbitrary_shape_rgba),
         )
@@ -337,6 +337,7 @@ class PlanarPushingSimConfig:
             and np.allclose(self.default_joint_positions, other.default_joint_positions)
             and self.diffusion_policy_config == other.diffusion_policy_config
             and self.multi_run_config == other.multi_run_config
-            and self.domain_randomization == other.domain_randomization
+            and self.domain_randomization_color_range
+            == other.domain_randomization_color_range
             and np.allclose(self.arbitrary_shape_rgba, other.arbitrary_shape_rgba)
         )

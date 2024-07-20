@@ -98,7 +98,7 @@ camera_configs:
       a: 1.0
     show_rgb: false
     randomize: false
-domain_randomization: true
+domain_randomization_color_range: 0.025
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig

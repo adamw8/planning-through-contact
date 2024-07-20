@@ -69,7 +69,7 @@ multi_run_config:
   evaluate_final_pusher_position: false
   evaluate_final_slider_rotation: true
 camera_randomization: false
-domain_randomization: false
+domain_randomization_color_range: 0.0
 
 ## Robot specific configs
 # sim_config

@@ -66,7 +66,7 @@ class StateEstimator(Diagram):
         self._scene_graph = builder.AddNamedSystem("scene_graph", SceneGraph())
         self._plant.RegisterAsSourceForSceneGraph(self._scene_graph)
 
-        if not sim_config.domain_randomization:
+        if sim_config.domain_randomization_color_range <= 0.0:
             self.slider = AddSliderAndConfigureContact(
                 sim_config=sim_config, plant=self._plant, scene_graph=self._scene_graph
             )
@@ -75,7 +75,7 @@ class StateEstimator(Diagram):
             # slider_grey = np.random.uniform(0.1, 0.25)
             table_grey = 0.7
             slider_grey = 0.1
-            color_range = 0.05
+            color_range = sim_config.domain_randomization_color_range
 
             randomize_pusher(color_range=color_range)
             randomize_table(

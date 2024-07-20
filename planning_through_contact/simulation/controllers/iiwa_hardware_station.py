@@ -63,7 +63,7 @@ class IiwaHardwareStation(RobotSystemBase):
         else:
             scenario_name = "accuracy-optimized"
 
-        if not sim_config.domain_randomization:
+        if sim_config.domain_randomization_color_range <= 0.0:
             scenario_file_name = f"{models_folder}/planar_pushing_iiwa_scenario.yaml"
 
             def add_slider_to_parser(parser):
@@ -80,7 +80,7 @@ class IiwaHardwareStation(RobotSystemBase):
             # slider_grey = np.random.uniform(0.1, 0.25)
             table_grey = 0.7
             slider_grey = 0.1
-            color_range = 0.05
+            color_range = sim_config.domain_randomization_color_range
 
             # randomize pusher and table
             randomize_pusher(color_range=color_range)
