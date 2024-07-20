@@ -29,7 +29,7 @@ directives:
         rotation: !Rpy { deg: [0.0, 0.0, 0.0]}
         # displace by half of the pusher length, so the pusher starts
         # exactly at the iiwa_link_7 base frame
-        translation: [0.0, 0.0, -0.075]
+        translation: [0.0, 0.0, -0.12]
 
 - add_weld:
     parent: iiwa::iiwa_link_7
@@ -41,4 +41,4 @@ directives:
         base_frame: pusher_base
         rotation: !Rpy { deg: [0.0, 0.0, 0.0]}
         # displace by pusher length
-        translation: [0.0, 0.0, 0.15]
+        translation: [0.0, 0.0, 0.2075]

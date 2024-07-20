@@ -1,3 +1,4 @@
+# sim config from initial underactuated experiments
 dynamics_config:
   _target_: planning_through_contact.planning.planar.planar_plan_config.SliderPusherSystemConfig
   pusher_radius: 0.015

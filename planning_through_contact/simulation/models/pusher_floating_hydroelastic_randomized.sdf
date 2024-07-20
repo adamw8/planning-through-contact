@@ -31,11 +31,12 @@
         <geometry>
           <cylinder>
             <radius> 0.015 </radius>
-            <length> 0.15 </length>
+            <length> 0.175 </length>
           </cylinder>
         </geometry>
         <material>
-          <diffuse>1.0 0.4627614345654485 0.12360426938897756 1</diffuse>
+          <!-- <diffuse> 1.0 0.45 0.14 1. </diffuse> -->
+          <diffuse>0.9273184924793301 0.4092477843881588 0.08922762224759716 1.0</diffuse>
         </material>
       </visual>
 
@@ -43,7 +44,7 @@
         <geometry>
           <cylinder>
             <radius> 0.015 </radius>
-            <length> 0.15 </length>
+            <length> 0.175 </length>
           </cylinder>        
         </geometry>
         <drake:proximity_properties>
