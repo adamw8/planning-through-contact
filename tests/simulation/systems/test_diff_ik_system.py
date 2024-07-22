@@ -30,9 +30,9 @@ def desired_pose() -> RigidTransform:
 @pytest.fixture
 def diff_ik_plant() -> MultibodyPlant:
     # Create dummy sim_config
-    slider = get_box()
+    slider = get_box(mass=0.1)
     sim_config = PlanarPushingSimConfig(
-        slider=get_box(),
+        slider=get_box(mass=0.1),
         dynamics_config=SliderPusherSystemConfig(
             slider=slider, friction_coeff_slider_pusher=0.05
         ),
@@ -91,7 +91,7 @@ def test_diff_ik_system(diff_ik_plant, default_joint_positions, desired_pose, st
     # Check output
     context = simulator.get_context()
     output = diagram.GetOutputPort("q_output").Eval(context)
-    desired_q = np.array([0.4121, 0.8786, -0.6505, -1.4512, 0.5895, 1.0103, 2.7615])
+    desired_q = np.array([0.4118, 0.8786, -0.6505, -1.4509, 0.5894, 1.0105, 2.7613])
     assert np.allclose(output, desired_q, atol=1e-4)
 
 

@@ -109,6 +109,22 @@ class PhysicalProperties:
         if self.center_of_mass is not None:
             self.center_of_mass = np.array(self.center_of_mass)
 
+    def __eq__(self, other):
+        if not isinstance(other, PhysicalProperties):
+            return False
+
+        for key, value in self.__dict__.items():
+            other_value = getattr(other, key, None)
+
+            if isinstance(value, np.ndarray):
+                if not np.array_equal(value, other_value):
+                    return False
+            else:
+                if value != other_value:
+                    return False
+
+        return True
+
 
 def load_primitive_info(primitive_info_file: str) -> List[Dict[str, Any]]:
     with open(primitive_info_file, "rb") as f:
