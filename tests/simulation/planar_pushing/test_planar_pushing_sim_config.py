@@ -36,6 +36,7 @@ from planning_through_contact.simulation.planar_pushing.planar_pushing_sim_confi
     PlanarPushingSimConfig,
 )
 from planning_through_contact.simulation.sim_utils import get_slider_start_poses
+from planning_through_contact.tools.utils import PhysicalProperties
 
 
 @pytest.fixture
@@ -49,6 +50,7 @@ def multi_run_config() -> MultiRunConfig:
         slider_goal_pose=PlanarPose(x=0.5, y=0.0, theta=0.0),
         workspace_width=0.5,
         workspace_height=0.5,
+        arbitrary_shape_pickle_path=None,
     )
 
 
@@ -63,7 +65,7 @@ def diffusion_policy_config() -> DiffusionPolicyConfig:
 
 @pytest.fixture()
 def sim_config() -> PlanarPushingSimConfig:
-    slider = get_box()
+    slider = get_box(mass=0.1)
     dynamics_config = SliderPusherSystemConfig(
         pusher_radius=0.015,
         friction_coeff_table_slider=0.5,
@@ -109,8 +111,21 @@ def sim_config() -> PlanarPushingSimConfig:
             slider_goal_pose=PlanarPose(x=0.5, y=0.0, theta=0.0),
             workspace_width=0.5,
             workspace_height=0.5,
+            arbitrary_shape_pickle_path=None,
         ),
         scene_directive_name="planar_pushing_iiwa_plant_hydroelastic.yaml",
+        domain_randomization_color_range=0.0,
+        arbitrary_shape_rgba=np.array([0.0, 0.0, 0.0, 1.0]),
+        slider_physical_properties=PhysicalProperties(
+            mass=0.1,
+            inertia=np.array([[1e-5, 0.0, 0.0], [0.0, 1e-5, 0.0], [0.0, 0.0, 1e-5]]),
+            center_of_mass=None,
+            is_compliant=True,
+            hydroelastic_modulus=1e6,
+            mu_dynamic=0.5,
+            mu_static=0.5,
+            mesh_resolution_hint=0.01,
+        ),
     )
 
 

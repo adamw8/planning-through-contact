@@ -340,4 +340,5 @@ class PlanarPushingSimConfig:
             and self.domain_randomization_color_range
             == other.domain_randomization_color_range
             and np.allclose(self.arbitrary_shape_rgba, other.arbitrary_shape_rgba)
+            and self.slider_physical_properties == other.slider_physical_properties
         )
