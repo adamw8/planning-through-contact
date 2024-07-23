@@ -285,6 +285,36 @@ def randomize_camera_config(
 
 
 def random_rgba_from_color_range(base_color, color_range):
+    if color_range >= np.sqrt(3):
+        r = np.random.uniform(0, 1)
+        g = np.random.uniform(0, 1)
+        b = np.random.uniform(0, 1)
+        return Rgba(r, g, b, 1)
+
+    if isinstance(base_color, Rgba):
+        r = base_color.r()
+        g = base_color.g()
+        b = base_color.b()
+    else:
+        r = base_color[0]
+        g = base_color[1]
+        b = base_color[2]
+
+    # Sample colors until valid RGB
+    while True:
+        # Sample random direction and offset
+        direction = np.random.randn(3)
+        offset = (
+            np.random.uniform(0, color_range) * direction / np.linalg.norm(direction)
+        )
+        R = r + offset[0]
+        G = g + offset[1]
+        B = b + offset[2]
+        if _valid_rgb(R, G, B):
+            return Rgba(R, G, B, 1)
+
+
+def random_rgba_from_color_range_legacy(base_color, color_range):
     if isinstance(base_color, Rgba):
         r = base_color.r()
         g = base_color.g()
@@ -298,6 +328,36 @@ def random_rgba_from_color_range(base_color, color_range):
     B = clamp(b + np.random.uniform(-color_range, color_range), 0.0, 1.0)
     A = 1  # assuming fully opaque
     return Rgba(R, G, B, A)
+
+
+def random_rgba_euclidean_distance(base_color, min_dist, max_dist):
+    if isinstance(base_color, Rgba):
+        r = base_color.r()
+        g = base_color.g()
+        b = base_color.b()
+    else:
+        r = base_color[0]
+        g = base_color[1]
+        b = base_color[2]
+
+    # Sample colors until valid RGB
+    while True:
+        # Sample random direction and offset
+        direction = np.random.randn(3)
+        offset = (
+            np.random.uniform(min_dist, max_dist)
+            * direction
+            / np.linalg.norm(direction)
+        )
+        R = r + offset[0]
+        G = g + offset[1]
+        B = b + offset[2]
+        if _valid_rgb(R, G, B):
+            return Rgba(R, G, B, 1)
+
+
+def _valid_rgb(r, g, b):
+    return 0 <= r <= 1 and 0 <= g <= 1 and 0 <= b <= 1
 
 
 ## Collision checkers for computing initial slider and pusher poses
