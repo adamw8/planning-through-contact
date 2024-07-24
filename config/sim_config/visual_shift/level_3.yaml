@@ -136,9 +136,9 @@ data_collection_config:
   convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   # plans_dir: 'trajectories/cotrain_data_v2'
-  plans_dir: 'trajectories/sim_tee_data/run_0'
-  rendered_plans_dir: 'trajectories_rendered/visual_shift_level_3'
-  zarr_path: 'trajectories_rendered/visual_shift_level_3.zarr'
+  plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data/run_0'
+  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_shift_level_3'
+  zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_shift_level_3.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
   action_chunk_length: 2048
