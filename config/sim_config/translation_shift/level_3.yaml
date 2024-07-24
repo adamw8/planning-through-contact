@@ -1,4 +1,4 @@
-# sim config for testing
+# sim config for the real iiwa set up
 dynamics_config:
   _target_: planning_through_contact.planning.planar.planar_plan_config.SliderPusherSystemConfig
   pusher_radius: 0.015
@@ -10,12 +10,12 @@ dynamics_config:
 slider_type: 'arbitrary'
 arbitrary_shape_pickle_path: arbitrary_shape_pickles/small_t_pusher.pkl
 arbitrary_shape_rgba: [0.1, 0.1, 0.1, 1.0]
-arbitrary_shape_visual_mesh_path: null # "hammer/rotated_hammer.obj" # Can be null (collision mesh will be used)
+arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
   mass: 0.1
   inertia: [[1e-5, 0.0, 0.0], [0.0, 1e-5, 0.0], [0.0, 0.0, 1e-5]]
-  center_of_mass: null # [0.0, 0.0, 0.0] # Use null for uniform density
+  center_of_mass: null # [0.0, 0.0, 0.0] # Use null for uniform densit7y
   is_compliant: true
   hydroelastic_modulus: 1.0e6
   # NOTE: These friction coefficients are used for sim while the ones in `dynamic_config` are used for planning!
@@ -73,7 +73,7 @@ camera_configs:
       b: 0.27
       a: 1.0
     show_rgb: false
-    randomize: false
+    randomize: true
   - name: 'wrist_camera'
     parent_frame: 'iiwa_link_7'
     orientation:
@@ -103,7 +103,7 @@ log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig
   num_runs: 10
-  max_attempt_duration: 120 # 80
+  max_attempt_duration: 120
   seed: 42
   slider_type: ${slider_type}
   arbitrary_shape_pickle_path: ${arbitrary_shape_pickle_path}
@@ -111,9 +111,9 @@ multi_run_config:
   slider_goal_pose: ${slider_goal_pose}
   workspace_width: 0.3
   workspace_height: 0.3
-  trans_tol: 0.01
-  rot_tol: 3 # degrees
-  evaluate_final_pusher_position: false
+  trans_tol: 0.02
+  rot_tol: 5 # degrees
+  evaluate_final_pusher_position: true
   evaluate_final_slider_rotation: true
   slider_physical_properties: ${physical_properties}
 
@@ -121,15 +121,10 @@ multi_run_config:
 # sim_config
 scene_directive_name: 'planar_pushing_iiwa_plant_hydroelastic.yaml'
 default_joint_positions: [0.41, 0.88, -0.65, -1.45, 0.59, 1.01, 2.76]
-# scene_directive_name: 'planar_pushing_cylinder_plant_hydroelastic.yaml'
-# default_joint_positions:
-#   - ${pusher_start_pose.x}
-#   - ${pusher_start_pose.y}
 
 # position controller / robot station
 robot_station:
   _target_: planning_through_contact.simulation.controllers.iiwa_hardware_station.IiwaHardwareStation
-  # _target_: planning_through_contact.simulation.controllers.cylinder_actuated_station.CylinderActuatedStation
   sim_config: null  # override in hydra.utils.instantiate
   meshcat: null     # override in hydra.utils.instantiate
 
@@ -140,9 +135,10 @@ data_collection_config:
   render_plans: true
   convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
+  # plans_dir: 'trajectories/cotrain_data_v2'
   plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data/run_0'
-  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/test'
-  zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/test.zarr'
+  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_renderer/translation_shift_level_3'
+  zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/translation_shift_level_3.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
   action_chunk_length: 2048
@@ -150,6 +146,7 @@ data_collection_config:
   image_chunk_length: 128
   image_width: 128
   image_height: 128
+  translation_shift: [0.0, -0.1]
   plan_config:
     _target_: planning_through_contact.simulation.environments.data_collection_table_environment.PlanConfig
     slider_type: ${slider_type}
@@ -157,7 +154,7 @@ data_collection_config:
     pusher_radius: 0.015
     contact_lam_min: 0.2
     contact_lam_max: 0.8
-    distance_to_object_socp: 0.25
+    distance_to_object_socp: 0.10
     ang_velocity_regularization: 25 # null
     width: 0.35
     height: 0.5
@@ -165,13 +162,13 @@ data_collection_config:
       - ${slider_goal_pose.x}
       - ${slider_goal_pose.y}
     buffer: 0.0
-    seed: 0
-    num_plans: 1
+    seed: 1
+    num_plans: 750
     pusher_start_pose: ${pusher_start_pose}
     slider_goal_pose: ${slider_goal_pose}
     limit_rotations: false
     noise_final_pose: true
-    num_unique_plans: 1
+    num_unique_plans: 2
     sort_plans: true
   ## Supercloud
   LLSUB_RANK: null
