@@ -16,6 +16,8 @@ from pydrake.all import (
     Simulator,
     StateInterpolatorWithDiscreteDerivative,
     ZeroOrderHold,
+    Adder,
+    ConstantVectorSource,
 )
 from pydrake.systems.sensors import ImageWriter, PixelType
 
@@ -111,6 +113,7 @@ class DataCollectionConfig:
         plan_config: PlanConfig,
         angular_speed_threshold: float = None,
         angular_speed_window_size: int = None,
+        translation_shift: np.ndarray = np.array([0.0, 0.1]),
         LLSUB_RANK: int = None,
         LLSUB_SIZE: int = None,
     ):
@@ -142,6 +145,9 @@ class DataCollectionConfig:
         # angular speed params
         self.angular_speed_threshold = angular_speed_threshold
         self.angular_speed_window_size = angular_speed_window_size
+
+        # translation shift (for task shift experiments)
+        self.translation_shift = np.array(translation_shift)
 
         # Supercloud settings
         self.LLSUB_RANK = LLSUB_RANK
@@ -256,6 +262,12 @@ class DataCollectionTableEnvironment:
             ),
         )
 
+        # Translation adders
+        pusher_adder = builder.AddNamedSystem("PusherTranslationShift", Adder(2, 2))
+        pusher_shift_source = builder.AddSystem(ConstantVectorSource(data_collection_config.translation_shift))
+        slider_adder = builder.AddNamedSystem("SliderTranslationShift", Adder(2, 3))
+        slider_shift_source = builder.AddSystem(ConstantVectorSource(np.array([*data_collection_config.translation_shift, 0.0])))
+
         if type(self._robot_system) == CylinderActuatedStation:
             # No diff IK required for actuated cylinder
             builder.Connect(
@@ -269,8 +281,19 @@ class DataCollectionTableEnvironment:
             )
         else:
             # Diff IK connections
+            # Adder to shift plans translationally (for task-shift experiments)
             builder.Connect(
                 self._desired_position_source.GetOutputPort("planar_position_command"),
+                pusher_adder.get_input_port(0),
+            )
+
+            builder.Connect(
+                pusher_shift_source.get_output_port(),
+                pusher_adder.get_input_port(1),
+            )
+
+            builder.Connect(
+                pusher_adder.get_output_port(),
                 self._position_to_rigid_transform.GetInputPort("planar_position_input"),
             )
 
@@ -311,8 +334,19 @@ class DataCollectionTableEnvironment:
             self._desired_position_source.GetOutputPort(
                 "desired_slider_planar_pose_vector"
             ),
+            slider_adder.get_input_port(0),
+        )
+
+        builder.Connect(
+            slider_shift_source.get_output_port(),
+            slider_adder.get_input_port(1),
+        )
+
+        builder.Connect(
+            slider_adder.get_output_port(),
             self._slider_pose_to_generalized_coords.get_input_port(),
         )
+
         builder.Connect(
             self._slider_pose_to_generalized_coords.get_output_port(),
             self._state_estimator.GetInputPort("object_position"),
