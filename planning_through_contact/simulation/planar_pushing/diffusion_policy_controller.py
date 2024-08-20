@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+import pickle
 import time as pytime
 from collections import deque
 from typing import List, Optional, Tuple
@@ -114,6 +115,13 @@ class DiffusionPolicyController(LeafSystem):
             for name in self.camera_port_dict.keys()
         }
 
+        # misc
+        self._batches = []
+        self._embeddings = []
+        self._saved_actions = []
+        self._last_save_time = None
+        self._save_idx = 0
+
     def _load_policy_from_checkpoint(self, checkpoint: str):
         # load checkpoint
         payload = torch.load(open(checkpoint, "rb"), pickle_module=dill)
@@ -164,6 +172,45 @@ class DiffusionPolicyController(LeafSystem):
                 action_prediction = self._policy.predict_action(
                     obs_dict, use_DDIM=True
                 )["action_pred"][0]
+
+            self._batches.append(obs_dict)
+            self._saved_actions.append(action_prediction.cpu().numpy())
+            self._embeddings.append(
+                self._policy.compute_obs_embedding(obs_dict)
+                .detach()
+                .cpu()
+                .numpy()
+                .flatten()
+            )
+
+            if self._last_save_time is None:
+                self._last_save_time = time
+
+            if time - self._last_save_time > 1.0:
+                print("Saving observations and actions")
+                # save self._batches with pickle
+                save_path = f"/home/adam/workspace/diffusion-planar-pushing/logging/sim/batches_{self._save_idx:02d}.pkl"
+                with open(save_path, "wb") as f:
+                    pickle.dump(self._batches, f)
+                print(f"Saved observations to {save_path}")
+
+                # save self._saved_actions with numpy
+                save_path = f"/home/adam/workspace/diffusion-planar-pushing/logging/sim/actions_{self._save_idx:02d}.npy"
+                np.save(save_path, np.array(self._saved_actions))
+                print(f"Saved actions to {save_path}")
+
+                # save self._embeddings with numpy
+                save_path = f"/home/adam/workspace/diffusion-planar-pushing/logging/sim/embeddings_{self._save_idx:02d}.npy"
+                np.save(save_path, np.array(self._embeddings))
+                print(f"Saved embeddings to {save_path}")
+
+                # reset arrays
+                self._batches = []
+                self._saved_actions = []
+                self._embeddings = []
+                self._last_save_time = time
+                self._save_idx += 1
+
             actions = action_prediction[self._start : self._end]
             for action in actions:
                 self._actions.append(action.cpu().numpy())
