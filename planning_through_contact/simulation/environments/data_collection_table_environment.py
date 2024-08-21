@@ -9,6 +9,8 @@ import cv2
 import numpy as np
 from PIL import Image
 from pydrake.all import (
+    Adder,
+    ConstantVectorSource,
     DiagramBuilder,
     DiscreteTimeDelay,
     LogVectorOutput,
@@ -16,8 +18,6 @@ from pydrake.all import (
     Simulator,
     StateInterpolatorWithDiscreteDerivative,
     ZeroOrderHold,
-    Adder,
-    ConstantVectorSource,
 )
 from pydrake.systems.sensors import ImageWriter, PixelType
 
@@ -113,7 +113,7 @@ class DataCollectionConfig:
         plan_config: PlanConfig,
         angular_speed_threshold: float = None,
         angular_speed_window_size: int = None,
-        translation_shift: np.ndarray = np.array([0.0, 0.1]),
+        translation_shift: np.ndarray = np.array([0.0, 0.0]),
         LLSUB_RANK: int = None,
         LLSUB_SIZE: int = None,
     ):
@@ -264,9 +264,15 @@ class DataCollectionTableEnvironment:
 
         # Translation adders
         pusher_adder = builder.AddNamedSystem("PusherTranslationShift", Adder(2, 2))
-        pusher_shift_source = builder.AddSystem(ConstantVectorSource(data_collection_config.translation_shift))
+        pusher_shift_source = builder.AddSystem(
+            ConstantVectorSource(data_collection_config.translation_shift)
+        )
         slider_adder = builder.AddNamedSystem("SliderTranslationShift", Adder(2, 3))
-        slider_shift_source = builder.AddSystem(ConstantVectorSource(np.array([*data_collection_config.translation_shift, 0.0])))
+        slider_shift_source = builder.AddSystem(
+            ConstantVectorSource(
+                np.array([*data_collection_config.translation_shift, 0.0])
+            )
+        )
 
         if type(self._robot_system) == CylinderActuatedStation:
             # No diff IK required for actuated cylinder

@@ -8,7 +8,7 @@
     <color rgba="1 1 1 1"/>
   </material>
   <material name="LightGrey">
-    <color rgba="0.6961966555752629 0.6859135978083298 0.6954081242973126 1.0"/>
+    <color rgba="0.6993534470532659 0.7008367477647607 0.7010718043715353 1.0"/>
   </material>
   <material name="Grey">
     <color rgba=".3 .3 .3 1"/>
