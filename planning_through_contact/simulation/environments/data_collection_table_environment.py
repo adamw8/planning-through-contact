@@ -383,13 +383,11 @@ class DataCollectionTableEnvironment:
 
         # Set up desired planar pose loggers
         self._pusher_pose_desired_logger = LogVectorOutput(
-            self._desired_position_source.GetOutputPort("planar_position_command"),
+            pusher_adder.get_output_port(),
             builder,
         )
         self._slider_pose_desired_logger = LogVectorOutput(
-            self._desired_position_source.GetOutputPort(
-                "desired_slider_planar_pose_vector"
-            ),
+            slider_adder.get_output_port(),
             builder,
         )
 
@@ -430,7 +428,7 @@ class DataCollectionTableEnvironment:
         pydot.graph_from_dot_data(self._diagram.GetGraphvizString())[0].write_pdf(  # type: ignore
             filename
         )
-        print(f"Saved diagram to: {filename}")
+        # print(f"Saved diagram to: {filename}")
 
     def save_logs(self, recording_file: Optional[str], save_dir: str):
         if recording_file:
