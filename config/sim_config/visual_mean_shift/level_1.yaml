@@ -5,8 +5,8 @@
 # This file only specifies the color shift of the T and the background!
 # I hardcoded the color shift in the pusher and the table!
 # Here are the values I used:
-# pusher: 0.98977203 0.40920226 0.17598328
-# table: 0.63822381 0.65841451 0.63325909
+# pusher: 0.98465805 0.44130339 0.21397492
+# table: 0.60733571 0.63762177 0.59988863
 
 dynamics_config:
   _target_: planning_through_contact.planning.planar.planar_plan_config.SliderPusherSystemConfig
@@ -18,7 +18,7 @@ dynamics_config:
   force_scale: 0.01
 slider_type: 'arbitrary'
 arbitrary_shape_pickle_path: arbitrary_shape_pickles/small_t_pusher.pkl
-arbitrary_shape_rgba: [0.12005384, 0.18840531, 0.14221783, 1.0]
+arbitrary_shape_rgba: [0.13008076, 0.23260796, 0.16332674, 1.0]
 arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
@@ -77,9 +77,9 @@ camera_configs:
     focal_x: 616.704
     focal_y: 616.777
     background:
-      r: 0.51026825
-      g: 0.44712925
-      b: 0.34151725
+      r: 0.5505365
+      g: 0.50425849
+      b: 0.4130345
       a: 1.0
     show_rgb: false
     randomize: true
@@ -101,9 +101,9 @@ camera_configs:
     focal_y: 616.777
     light_direction: [0.25, 1.0, 1.75]
     background:
-      r: 0.47
-      g: 0.39
-      b: 0.27
+      r: 0.5505365
+      g: 0.50425849
+      b: 0.4130345
       a: 1.0
     show_rgb: false
     randomize: false
