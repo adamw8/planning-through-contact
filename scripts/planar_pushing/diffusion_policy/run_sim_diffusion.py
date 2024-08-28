@@ -2,6 +2,8 @@ import importlib
 import logging
 import os
 import pathlib
+import signal
+import sys
 
 import hydra
 import numpy as np
@@ -30,11 +32,18 @@ from planning_through_contact.tools.utils import (
 )
 
 
+def signal_handler(sig, frame):
+    print("Detected Ctrl+C. Exiting.")
+    sys.exit(0)
+
+
 @hydra.main(
     version_base=None,
     config_path=str(pathlib.Path(__file__).parents[3].joinpath("config", "sim_config")),
 )
 def run_sim(cfg: OmegaConf):
+    signal.signal(signal.SIGINT, signal_handler)
+
     logging.basicConfig(level=logging.INFO)
 
     # start meshcat
