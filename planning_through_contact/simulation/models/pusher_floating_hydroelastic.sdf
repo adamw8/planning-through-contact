@@ -36,7 +36,7 @@
         </geometry>
         <material>
           <!-- <diffuse> 1.0 0.45 0.14 1. </diffuse> -->
-          <diffuse> 0.98465805 0.44130339 0.21397492 1. </diffuse>
+          <diffuse> 0.9559478768604551 0.457853903965949 0.18845002434450042 1. </diffuse>
         </material>
       </visual>
 

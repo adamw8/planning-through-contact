@@ -5,8 +5,12 @@
 # This file only specifies the color shift of the T and the background!
 # I hardcoded the color shift in the pusher and the table!
 # Here are the values I used:
-# pusher: 0.98465805 0.44130339 0.21397492
-# table: 0.60733571 0.63762177 0.59988863
+# Level 1: Shift magnitude: 0.15
+# ---------------------------------------
+# slider: 0.17959254825961607, 0.1998645126451323, 0.17868993185720078
+# pusher: 0.9559478768604551 0.457853903965949 0.18845002434450042
+# table: 0.6541105770499225 0.6223703837779415 0.5801342269597995
+# background: 0.5840543216779073 0.30209928927825586 0.22798718336977752
 
 dynamics_config:
   _target_: planning_through_contact.planning.planar.planar_plan_config.SliderPusherSystemConfig
@@ -18,7 +22,7 @@ dynamics_config:
   force_scale: 0.01
 slider_type: 'arbitrary'
 arbitrary_shape_pickle_path: arbitrary_shape_pickles/small_t_pusher.pkl
-arbitrary_shape_rgba: [0.13008076, 0.23260796, 0.16332674, 1.0]
+arbitrary_shape_rgba: [0.17959254825961607, 0.1998645126451323, 0.17868993185720078, 1.0]
 arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
@@ -77,9 +81,9 @@ camera_configs:
     focal_x: 616.704
     focal_y: 616.777
     background:
-      r: 0.5505365
-      g: 0.50425849
-      b: 0.4130345
+      r: 0.5840543216779073
+      g: 0.30209928927825586
+      b: 0.22798718336977752
       a: 1.0
     show_rgb: false
     randomize: true
@@ -101,9 +105,9 @@ camera_configs:
     focal_y: 616.777
     light_direction: [0.25, 1.0, 1.75]
     background:
-      r: 0.5505365
-      g: 0.50425849
-      b: 0.4130345
+      r: 0.5840543216779073
+      g: 0.30209928927825586
+      b: 0.22798718336977752
       a: 1.0
     show_rgb: false
     randomize: false
@@ -146,7 +150,8 @@ data_collection_config:
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   # plans_dir: 'trajectories/cotrain_data_v2'
   plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data/run_0'
-  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_mean_shift_level_1'
+  # rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_mean_shift_level_1'
+  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/test'
   zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_mean_shift_level_1.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
