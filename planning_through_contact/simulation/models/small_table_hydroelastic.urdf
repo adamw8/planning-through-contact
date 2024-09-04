@@ -6,8 +6,8 @@
   <material name="White">
     <color rgba="1 1 1 1"/>
   </material>
-  <material name="LightGrey">
-    <color rgba="0.7730673055063655 0.7594783481873129 0.7335185763860613 1"/>
+  <material name="LightGrey">    <color rgba="0.6559036606856935 0.690469840494438 0.7215566
+444252369 1"/>
   </material>
   <material name="Grey">
     <color rgba=".3 .3 .3 1"/>
