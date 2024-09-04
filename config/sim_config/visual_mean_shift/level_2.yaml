@@ -1,11 +1,11 @@
 # sim config for the real iiwa set up
 
-# Level 2: Shift magnitude: 0.4
+# Level 2: Shift magnitude: 0.2
 # ---------------------------------------
-# slider: 0.31224679535897626, 0.3663053670536861, 0.3098398182858687
-# pusher: 0.8825276716278803 0.6459437439091975 0.33586673158533453
-# table: 0.5776282054664601 0.4929876900745107 0.3803579385594656
-# background: 0.7741448578077528 0.15559810474201555 0.15796582231940665
+# slider: 0.18301976019403926, 0.26224686288850074, 0.1823630675737873
+# pusher: 0.829972952775068 0.3879821255326669 0.19614229088525403
+# table: 0.5236146427427743 0.6618793619777523 0.786226577700948
+# background: 0.5391056873328273 0.3962817824183705 0.4575764995619275
 
 dynamics_config:
   _target_: planning_through_contact.planning.planar.planar_plan_config.SliderPusherSystemConfig
@@ -17,7 +17,7 @@ dynamics_config:
   force_scale: 0.01
 slider_type: 'arbitrary'
 arbitrary_shape_pickle_path: arbitrary_shape_pickles/small_t_pusher.pkl
-arbitrary_shape_rgba: [0.31224679535897626, 0.3663053670536861, 0.3098398182858687, 1.0]
+arbitrary_shape_rgba: [0.18301976019403926, 0.26224686288850074, 0.1823630675737873, 1.0]
 arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
@@ -76,9 +76,9 @@ camera_configs:
     focal_x: 616.704
     focal_y: 616.777
     background:
-      r: 0.7741448578077528
-      g: 0.15559810474201555
-      b: 0.15796582231940665
+      r: 0.5391056873328273
+      g: 0.3962817824183705
+      b: 0.4575764995619275
       a: 1.0
     show_rgb: false
     randomize: true
@@ -100,9 +100,9 @@ camera_configs:
     focal_y: 616.777
     light_direction: [0.25, 1.0, 1.75]
     background:
-      r: 0.7741448578077528
-      g: 0.15559810474201555
-      b: 0.15796582231940665
+      r: 0.5391056873328273
+      g: 0.3962817824183705
+      b: 0.4575764995619275
       a: 1.0
     show_rgb: false
     randomize: false
@@ -145,9 +145,9 @@ data_collection_config:
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   # plans_dir: 'trajectories/cotrain_data_v2'
   plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data/run_0'
-  # rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_shift_level_2'
-  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/test'
-  zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_shift_level_2.zarr'
+  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_mean_shift_level_2'
+  # rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/test'
+  zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_mean_shift_level_2.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
   action_chunk_length: 2048
