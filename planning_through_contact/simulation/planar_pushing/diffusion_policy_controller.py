@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+import pickle
 import time as pytime
 from collections import deque
 from typing import List, Optional, Tuple
@@ -41,6 +42,7 @@ class DiffusionPolicyController(LeafSystem):
         delay: float = 1.0,
         device="cuda:0",
         debug: bool = False,
+        save_logs: bool = False,
         cfg_overrides: dict = {},
     ):
         super().__init__()
@@ -114,6 +116,19 @@ class DiffusionPolicyController(LeafSystem):
             for name in self.camera_port_dict.keys()
         }
 
+        # Logging data structures
+        self._save_logs = save_logs
+        if self._save_logs:
+            self._logs = {
+                "checkpoint": self._checkpoint,
+                "actions": [],  # N x action horizon x action dim
+                "poses": [],  # N x observation horizon x pose dim
+                "images": {
+                    name: [] for name in self.camera_port_dict.keys()
+                },  # N x observation horizon x H x W x C
+                "embeddings": [],  # N x embedding dim
+            }
+
     def _load_policy_from_checkpoint(self, checkpoint: str):
         # load checkpoint
         payload = torch.load(open(checkpoint, "rb"), pickle_module=dill)
@@ -164,6 +179,24 @@ class DiffusionPolicyController(LeafSystem):
                 action_prediction = self._policy.predict_action(
                     obs_dict, use_DDIM=True
                 )["action_pred"][0]
+
+                # Save logs
+                if self._save_logs:
+                    self._logs["actions"].append(action_prediction.cpu().numpy())
+                    self._logs["poses"].append(
+                        np.array([pose for pose in self._pusher_pose_deque])
+                    )
+                    for camera, image_deque in self._image_deque_dict.items():
+                        self._logs["images"][camera].append(
+                            np.array([img for img in image_deque])
+                        )
+                    self._logs["embeddings"].append(
+                        self._policy.compute_obs_embedding(obs_dict)
+                        .cpu()
+                        .numpy()
+                        .flatten()
+                    )
+
             actions = action_prediction[self._start : self._end]
             for action in actions:
                 self._actions.append(action.cpu().numpy())
@@ -223,7 +256,7 @@ class DiffusionPolicyController(LeafSystem):
         for camera, image_deque in image_deque_dict.items():
             img_tensor = torch.cat(
                 [
-                    torch.from_numpy(np.moveaxis(img, -1, -3) / 255.0)
+                    torch.from_numpy(np.moveaxis(img, -1, -3) / 255.0)  # C H W
                     for img in image_deque
                 ],
                 dim=0,
@@ -234,7 +267,7 @@ class DiffusionPolicyController(LeafSystem):
                 self._camera_shape_dict[camera][1],  # H
                 self._camera_shape_dict[camera][2],  # W
             )
-            data["obs"][camera] = img_tensor.to(self._device)  # 1, T_obs, C, W, H
+            data["obs"][camera] = img_tensor.to(self._device)  # 1, T_obs, C, H, W
 
         return data
 
@@ -253,7 +286,7 @@ class DiffusionPolicyController(LeafSystem):
             image_width = self._camera_shape_dict[camera][2]
             if image.shape[0] != image_height or image.shape[1] != image_width:
                 image = cv2.resize(image, (image_width, image_height))
-            self._image_deque_dict[camera].append(image[:, :, :-1])  # C H W
+            self._image_deque_dict[camera].append(image[:, :, :-1])  # H W C
 
     def _load_normalizer(self):
         normalizer_path = self._checkpoint.parent.parent.joinpath("normalizer.pt")
@@ -283,3 +316,19 @@ class DiffusionPolicyController(LeafSystem):
             normalizer = dataset.get_normalizer()
             torch.save(normalizer, normalizer_path)
             return normalizer
+
+    def save_logs_to_file(self, save_path: str):
+        if self._save_logs:
+            # Convert logs to numpy
+            self._logs["actions"] = np.array(self._logs["actions"])
+            self._logs["poses"] = np.array(self._logs["poses"])
+            self._logs["embeddings"] = np.array(self._logs["embeddings"])
+            for camera in self._logs["images"].keys():
+                self._logs["images"][camera] = np.array(self._logs["images"][camera])
+
+            # Save logs to file
+            with open(save_path, "wb") as f:
+                pickle.dump(self._logs, f)
+            logger.info(f"Saved logs to {save_path}")
+        else:
+            logger.warning("No logs to save. Set save_logs=True to save logs.")

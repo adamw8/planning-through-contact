@@ -2,6 +2,8 @@ import importlib
 import logging
 import os
 import pathlib
+import signal
+import sys
 
 import hydra
 import numpy as np
@@ -36,6 +38,10 @@ from planning_through_contact.tools.utils import (
 )
 def run_sim(cfg: OmegaConf):
     logging.basicConfig(level=logging.INFO)
+    if "save_logs" in cfg.diffusion_policy_config:
+        save_logs = cfg.diffusion_policy_config.save_logs
+    else:
+        save_logs = False
 
     # start meshcat
     print(f"station meshcat")
@@ -52,6 +58,27 @@ def run_sim(cfg: OmegaConf):
 
     # Diffusion Policy source
     position_source = DiffusionPolicySource(sim_config.diffusion_policy_config)
+    if save_logs:
+        pickled_logs_dir = "pickled_logs"  # TODO: make this a config option
+
+        def signal_handler(sig, frame):
+            print("Received signal: ", sig)
+
+            if not os.path.exists(pickled_logs_dir):
+                os.makedirs(pickled_logs_dir)
+            num_files = len(
+                [
+                    file
+                    for file in os.listdir(pickled_logs_dir)
+                    if os.path.isfile(os.path.join(pickled_logs_dir, file))
+                ]
+            )
+            position_source._diffusion_policy_controller.save_logs_to_file(
+                f"pickled_logs/{num_files}.pkl"
+            )
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
 
     # Set up position controller
     # TODO: load with hydra instead (currently giving camera config errors)
@@ -87,6 +114,20 @@ def run_sim(cfg: OmegaConf):
     successful_idx, save_dir = environment.simulate(
         end_time, recording_file=recording_name
     )
+
+    if save_logs:
+        if not os.path.exists(pickled_logs_dir):
+            os.makedirs(pickled_logs_dir)
+        num_files = len(
+            [
+                file
+                for file in os.listdir(pickled_logs_dir)
+                if os.path.isfile(os.path.join(pickled_logs_dir, file))
+            ]
+        )
+        position_source._diffusion_policy_controller.save_logs_to_file(
+            f"pickled_logs/{num_files}.pkl"
+        )
 
     # Update logs and save config file
     OmegaConf.save(cfg, f"{save_dir}/sim_config.yaml")

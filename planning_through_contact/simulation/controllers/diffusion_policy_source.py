@@ -23,6 +23,7 @@ class DiffusionPolicyConfig:
     debug: bool = False
     device: str = "cuda:0"
     cfg_overrides: dict = field(default_factory={})
+    save_logs: bool = False
 
     def __eq__(self, other: "DiffusionPolicyConfig"):
         return (
@@ -35,6 +36,7 @@ class DiffusionPolicyConfig:
             and self.debug == other.debug
             and self.device == other.device
             and self.cfg_overrides == other.cfg_overrides
+            and self.save_logs == other.save_logs
         )
 
 
@@ -63,6 +65,7 @@ class DiffusionPolicySource(DesiredPlanarPositionSourceBase):
                 debug=diffusion_policy_config.debug,
                 device=diffusion_policy_config.device,
                 cfg_overrides=diffusion_policy_config.cfg_overrides,
+                save_logs=diffusion_policy_config.save_logs,
             ),
         )
 
