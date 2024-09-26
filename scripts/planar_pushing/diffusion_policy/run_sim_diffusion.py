@@ -74,7 +74,7 @@ def run_sim(cfg: OmegaConf):
                 ]
             )
             position_source._diffusion_policy_controller.save_logs_to_file(
-                f"pickled_logs/{num_files}.pkl"
+                f"{pickled_logs_dir}/{num_files}.pkl"
             )
             sys.exit(0)
 
