@@ -16,6 +16,7 @@ from planning_through_contact.experiments.utils import (
     get_arbitrary,
     get_box,
     get_default_plan_config,
+    get_five_corner_slider,
     get_tee,
 )
 from planning_through_contact.geometry.planar.planar_pose import PlanarPose
@@ -193,6 +194,8 @@ class PlanarPushingSimConfig:
                 slider_physical_properties.mass,
                 slider_physical_properties.center_of_mass,
             )
+        elif cfg.slider_type == "convex_5":
+            slider = get_five_corner_slider()
         else:
             raise ValueError(f"Slider type not yet implemented: {cfg.slider_type}")
         dynamics_config: SliderPusherSystemConfig = hydra.utils.instantiate(

@@ -17,73 +17,39 @@ from planning_through_contact.tools.utils import load_primitive_info
 
 
 def main():
-    # T-shape
-    # TODO: Check that this actually is a T-shape and ensure some box overlap
-    # loaded_boxes = [
-    #     {
-    #         "name": "box1",
-    #         "size": [0.2, 0.05, 0.05],
-    #         "transform": np.eye(4),
-    #     },
-    #     {
-    #         "name": "box2",
-    #         "size": [0.05, 0.15001, 0.05],  # Require a small overlap
-    #         "transform": np.array(
-    #             [
-    #                 [1.0, 0.0, 0.0, 0.0],
-    #                 [0.0, 1.0, 0.0, -0.1],
-    #                 [0.0, 0.0, 1.0, 0.0],
-    #                 [0.0, 0.0, 0.0, 1.0],
-    #             ]
-    #         ),
-    #     },
-    # ]
+    loaded_boxes = [
+        {
+            "name": "box",
+            "size": [0.04064, 0.165, 0.040875],
+            "transform": np.eye(4),
+        },
+        {
+            "name": "box",
+            "size": [0.165 / 2, 0.04064, 0.040875],
+            "transform": np.array(
+                [
+                    [1.0, 0.0, 0.0, 0.165 / 4],
+                    [0.0, 1.0, 0.0, 0.165 / 2 - 0.04064 / 2],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            ),
+        },
+        {
+            "name": "box",
+            "size": [0.165 / 2, 0.04064, 0.040875],
+            "transform": np.array(
+                [
+                    [1.0, 0.0, 0.0, -0.165 / 4],
+                    [0.0, 1.0, 0.0, -0.165 / 2 + 0.04064 / 2],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            ),
+        },
+    ]
 
-    # loaded_boxes = [
-    #     {
-    #         "name": "box1",
-    #         "size": [0.3, 0.1, 0.05],
-    #         "transform": np.eye(4),
-    #     },
-    #     {
-    #         "name": "box2",
-    #         "size": [0.15, 0.15, 0.05],
-    #         "transform": np.array(
-    #             [
-    #                 [1.0, 0.0, 0.0, 0.1],
-    #                 [0.0, 1.0, 0.0, -0.1],
-    #                 [0.0, 0.0, 1.0, 0.0],
-    #                 [0.0, 0.0, 0.0, 1.0],
-    #             ]
-    #         ),
-    #     },
-    #     {
-    #         "name": "box3",
-    #         "size": [0.1, 0.3, 0.05],
-    #         "transform": np.array(
-    #             [
-    #                 [1.0, 0.0, 0.0, 0.0],
-    #                 [0.0, 1.0, 0.0, -0.12],
-    #                 [0.0, 0.0, 1.0, 0.0],
-    #                 [0.0, 0.0, 0.0, 1.0],
-    #             ]
-    #         ),
-    #     },
-    #     {
-    #         "name": "box3",
-    #         "size": [0.05, 0.05, 0.05],
-    #         "transform": np.array(
-    #             [
-    #                 [1.0, 0.0, 0.0, -0.15],
-    #                 [0.0, 1.0, 0.0, 0.0],  # More challenging: [0.0,0.0,-0.05]
-    #                 [0.0, 0.0, 1.0, 0.0],
-    #                 [0.0, 0.0, 0.0, 1.0],
-    #             ]
-    #         ),
-    #     },
-    # ]
-
-    loaded_boxes = load_primitive_info("arbitrary_shape_pickles/small_t_pusher.pkl")
+    # loaded_boxes = load_primitive_info("arbitrary_shape_pickles/snake.pkl")
 
     width, height = compute_union_dimensions(loaded_boxes)
     print(f"Union dimensions: width={width}, height={height}")

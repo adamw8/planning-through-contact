@@ -82,7 +82,7 @@ def get_sugar_box() -> RigidBody:
     return slider
 
 
-def get_four_corner_slider() -> RigidBody:
+def c() -> RigidBody:
     vertices = [[-0.4, -1], [-1, 0.5], [1, 0.7], [1, -0.6]]
     scale = 1 / 10
     vertices = [np.array(v) * scale for v in vertices]
@@ -95,7 +95,7 @@ def get_five_corner_slider() -> RigidBody:
     scale = 1 / 10
     vertices = [np.array(v) * scale for v in vertices]
     geometry = VertexDefinedGeometry(vertices)
-    return RigidBody("convex_4_corners", geometry, mass=0.1)
+    return RigidBody("convex_5_corners", geometry, mass=0.1)
 
 
 def get_triangle() -> RigidBody:
