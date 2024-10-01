@@ -11,6 +11,7 @@ diffusion_policy_logs/
 scripts/adam
 outputs/
 multirun/
+arbitrary_shape_pickles/
 
 # Vim
 *.swp
