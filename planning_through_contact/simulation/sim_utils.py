@@ -31,6 +31,9 @@ from planning_through_contact.geometry.collision_geometry.collision_geometry imp
     PolytopeContactLocation,
 )
 from planning_through_contact.geometry.collision_geometry.t_pusher_2d import TPusher2d
+from planning_through_contact.geometry.collision_geometry.vertex_defined_geometry import (
+    VertexDefinedGeometry,
+)
 from planning_through_contact.geometry.planar.non_collision import (
     check_finger_pose_in_contact_location,
 )
@@ -108,6 +111,11 @@ def GetSliderUrl(sim_config, format: Literal["sdf", "yaml"] = "sdf"):
         slider_sdf_url = f"package://planning_through_contact/t_pusher.{format}"
     elif isinstance(sim_config.slider.geometry, ArbitraryShape2D):
         slider_sdf_url = f"package://planning_through_contact/arbitrary_shape.{format}"
+    elif isinstance(sim_config.slider.geometry, VertexDefinedGeometry):
+        # TODO: determine which file name to return
+        slider_sdf_url = (
+            f"package://planning_through_contact/irregular_polygons/triangle.{format}"
+        )
     else:
         raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     return slider_sdf_url
@@ -120,6 +128,9 @@ def get_slider_sdf_path(sim_config, models_folder: str) -> str:
         slider_sdf_url = f"{models_folder}/t_pusher.sdf"
     elif isinstance(sim_config.slider.geometry, ArbitraryShape2D):
         slider_sdf_url = f"{models_folder}/arbitrary_shape.sdf"
+    elif isinstance(sim_config.slider.geometry, VertexDefinedGeometry):
+        # TODO: determine which file name to return
+        slider_sdf_url = f"{models_folder}/irregular_polygons/triangle.sdf"
     else:
         raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     return slider_sdf_url

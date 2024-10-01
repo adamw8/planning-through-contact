@@ -106,6 +106,47 @@ def get_triangle() -> RigidBody:
     return RigidBody("triangle", geometry, mass=0.1)
 
 
+def get_irregular_triangle() -> RigidBody:
+    vertices = [[0, 0], [0, 0.144], [0.075, 0.12]]
+    # vertices = [[0, 0], [0, 0.20], [0.075, 0.12]]
+    scale = 1.0
+    vertices = [np.array(v) * scale for v in vertices]
+    # shift vertices
+    approx_com = sum(vertices) / len(vertices)
+    vertices = [v - approx_com for v in vertices]
+    geometry = VertexDefinedGeometry(vertices)
+    return RigidBody("irregular_triangle", geometry, mass=0.1)
+
+
+def get_irregular_pentagon() -> RigidBody:
+    vertices = [[0, 0], [0, 0.144], [0.075, 0.12], [0.14, 0.055], [0.127, 0]]
+    scale = 1.0
+    vertices = [np.array(v) * scale for v in vertices]
+    # shift vertices
+    approx_com = sum(vertices) / len(vertices)
+    vertices = [v - approx_com for v in vertices]
+    geometry = VertexDefinedGeometry(vertices)
+    return RigidBody("irregular_pentagon", geometry, mass=0.1)
+
+
+def get_irregular_hexagon() -> RigidBody:
+    vertices = [
+        [0, 0],
+        [-0.03, 0.08],
+        [0.02, 0.134],
+        [0.08, 0.15],
+        [0.121, 0.119],
+        [0.076, 0.0],
+    ]
+    scale = 1.0
+    vertices = [np.array(v) * scale for v in vertices]
+    # shift vertices
+    approx_com = sum(vertices) / len(vertices)
+    vertices = [v - approx_com for v in vertices]
+    geometry = VertexDefinedGeometry(vertices)
+    return RigidBody("irregular_hexagon", geometry, mass=0.1)
+
+
 def get_default_contact_cost() -> ContactCost:
     contact_cost = ContactCost(
         keypoint_arc_length=10.0,
@@ -184,6 +225,12 @@ def get_default_plan_config(
         slider = get_five_corner_slider()
     elif slider_type == "triangle":
         slider = get_triangle()
+    elif slider_type == "irregular_triangle":
+        slider = get_irregular_triangle()
+    elif slider_type == "irregular_pentagon":
+        slider = get_irregular_pentagon()
+    elif slider_type == "irregular_hexagon":
+        slider = get_irregular_hexagon()
     elif slider_type == "tee":
         slider = get_tee(mass)
     elif slider_type == "arbitrary":
