@@ -107,8 +107,7 @@ def get_triangle() -> RigidBody:
 
 
 def get_irregular_triangle() -> RigidBody:
-    vertices = [[0, 0], [0, 0.144], [0.075, 0.12]]
-    # vertices = [[0, 0], [0, 0.20], [0.075, 0.12]]
+    vertices = [[0, 0], [0.025, 0.15], [0.165, 0]]
     scale = 1.0
     vertices = [np.array(v) * scale for v in vertices]
     # shift vertices
