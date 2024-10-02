@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="triangle_pushee_model">
+    <!-- Link containing the mesh -->
+    <link name="triangle_pushee_link">
+      
+      <!-- Visual representation of the mesh -->
+      <visual name="triangular_pushee_visual">
+        <geometry>
+          <mesh>
+            <uri>triangle.obj</uri>
+            <scale>1 1 1</scale> <!-- Optional scaling -->
+          </mesh>
+        </geometry>
+
+        <!-- Assigning black color to the mesh -->
+        <material>
+          <ambient>0 0 0 1</ambient>
+          <diffuse>0 0 0 1</diffuse>
+          <specular>0 0 0 1</specular>
+          <emissive>0 0 0 1</emissive>
+        </material>
+      </visual>
+      
+    </link>
+  </model>
+</sdf>
