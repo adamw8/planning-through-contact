@@ -2,6 +2,8 @@ import importlib
 import logging
 import os
 import pathlib
+import signal
+import sys
 
 import hydra
 import numpy as np
@@ -36,6 +38,10 @@ from planning_through_contact.tools.utils import (
 )
 def run_sim(cfg: OmegaConf):
     logging.basicConfig(level=logging.INFO)
+    if "save_logs" in cfg.diffusion_policy_config:
+        save_logs = cfg.diffusion_policy_config.save_logs
+    else:
+        save_logs = False
 
     # start meshcat
     print(f"station meshcat")
@@ -52,6 +58,27 @@ def run_sim(cfg: OmegaConf):
 
     # Diffusion Policy source
     position_source = DiffusionPolicySource(sim_config.diffusion_policy_config)
+    if save_logs:
+        pickled_logs_dir = "pickled_logs"  # TODO: make this a config option
+
+        def signal_handler(sig, frame):
+            print("Received signal: ", sig)
+
+            if not os.path.exists(pickled_logs_dir):
+                os.makedirs(pickled_logs_dir)
+            num_files = len(
+                [
+                    file
+                    for file in os.listdir(pickled_logs_dir)
+                    if os.path.isfile(os.path.join(pickled_logs_dir, file))
+                ]
+            )
+            position_source._diffusion_policy_controller.save_logs_to_file(
+                f"{pickled_logs_dir}/{num_files}.pkl"
+            )
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
 
     # Set up position controller
     # TODO: load with hydra instead (currently giving camera config errors)
@@ -88,6 +115,20 @@ def run_sim(cfg: OmegaConf):
         end_time, recording_file=recording_name
     )
 
+    if save_logs:
+        if not os.path.exists(pickled_logs_dir):
+            os.makedirs(pickled_logs_dir)
+        num_files = len(
+            [
+                file
+                for file in os.listdir(pickled_logs_dir)
+                if os.path.isfile(os.path.join(pickled_logs_dir, file))
+            ]
+        )
+        position_source._diffusion_policy_controller.save_logs_to_file(
+            f"pickled_logs/{num_files}.pkl"
+        )
+
     # Update logs and save config file
     OmegaConf.save(cfg, f"{save_dir}/sim_config.yaml")
     with open(f"{cfg.log_dir}/checkpoint_statistics.txt", "a") as f:
@@ -97,6 +138,14 @@ def run_sim(cfg: OmegaConf):
             f"Success ratio: {len(successful_idx)} / {num_runs} = {100.0*len(successful_idx) / num_runs:.3f}%\n"
         )
         f.write(f"Success_idx: {successful_idx}\n")
+        f.write(f"trans_tol: {cfg.multi_run_config.trans_tol}\n")
+        f.write(f"rot_tol: {cfg.multi_run_config.rot_tol}\n")
+        f.write(
+            f"evaluate_final_pusher_position: {cfg.multi_run_config.evaluate_final_pusher_position}\n"
+        )
+        f.write(
+            f"evaluate_final_slider_rotation: {cfg.multi_run_config.evaluate_final_slider_rotation}\n"
+        )
         f.write(f"Save dir: {save_dir}\n")
         f.write("\n")
 
@@ -128,7 +177,7 @@ def create_arbitrary_shape_sdf_file(cfg: OmegaConf, sim_config: PlanarPushingSim
         model_name="arbitrary",
         base_link_name="arbitrary",
         is_hydroelastic="hydroelastic" in cfg.contact_model.lower(),
-        rgba=[0.0, 0.0, 0.0, 1.0],
+        rgba=sim_config.arbitrary_shape_rgba,
         com_override=[0.0, 0.0, 0.0],  # Plan assumes that object frame = CoM frame
     )
 

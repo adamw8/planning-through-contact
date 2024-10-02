@@ -7,6 +7,7 @@ dynamics_config:
   integration_constant: 0.3
   force_scale: 0.01
 slider_type: 'box'
+arbitrary_shape_rgba: [0.0, 0.0, 0.0, 1.0]
 arbitrary_shape_pickle_path: null
 arbitrary_shape_visual_mesh_path: null # "hammer/rotated_hammer.obj" # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
@@ -73,8 +74,8 @@ camera_configs:
       b: 0.768627
       a: 1.0
     show_rgb: false
-camera_randomization: false
-domain_randomization: false
+    randomize: false
+domain_randomization_color_range: 0.0
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig

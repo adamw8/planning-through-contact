@@ -8,12 +8,13 @@ dynamics_config:
   force_scale: 0.01
 slider_type: 'box'
 arbitrary_shape_pickle_path: null
-arbitrary_shape_visual_mesh_path: null # "hammer/rotated_hammer.obj" # Can be null (collision mesh will be used)
+arbitrary_shape_rgba: [0.0, 0.0, 0.0, 1.0]
+arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
   mass: 0.1
   inertia: [[1e-5, 0.0, 0.0], [0.0, 1e-5, 0.0], [0.0, 0.0, 1e-5]]
-  center_of_mass: null # [0.0, 0.0, 0.0] # Use null for uniform density
+  center_of_mass: null # [0.0, 0.0, 0.0] # Use null for uniform densit7y
   is_compliant: true
   hydroelastic_modulus: 1.0e6
   # NOTE: These friction coefficients are used for sim while the ones in `dynamic_config` are used for planning!
@@ -67,12 +68,8 @@ multi_run_config:
   slider_goal_pose: ${slider_goal_pose}
   workspace_width: 0.5
   workspace_height: 0.5
-  trans_tol: 0.02
-  rot_tol: 5 # degrees
-  evaluate_final_pusher_position: true
-  evaluate_final_slider_rotation: true
-  slider_physical_properties: ${physical_properties}
-
+  arbitrary_shape_pickle_path: ${arbitrary_shape_pickle_path}
+domain_randomization_color_range: 0.0
 ## Robot specific configs
 # sim_config
 scene_directive_name: 'planar_pushing_iiwa_plant_hydroelastic.yaml'

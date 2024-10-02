@@ -32,6 +32,7 @@ from planning_through_contact.simulation.sim_utils import (
     get_slider_sdf_path,
     models_folder,
     package_xml_file,
+    random_rgba_from_color_range,
     randomize_camera_config,
     randomize_pusher,
     randomize_table,
@@ -62,7 +63,7 @@ class IiwaHardwareStation(RobotSystemBase):
         else:
             scenario_name = "accuracy-optimized"
 
-        if not sim_config.domain_randomization:
+        if sim_config.domain_randomization_color_range <= 0.0:
             scenario_file_name = f"{models_folder}/planar_pushing_iiwa_scenario.yaml"
 
             def add_slider_to_parser(parser):
@@ -75,12 +76,14 @@ class IiwaHardwareStation(RobotSystemBase):
                 f"{models_folder}/planar_pushing_iiwa_scenario_randomized.yaml"
             )
 
-            table_grey = np.random.uniform(0.3, 0.95)
-            slider_grey = np.random.uniform(0.1, 0.25)
-            color_range = 0.025
+            # table_grey = np.random.uniform(0.3, 0.95)
+            # slider_grey = np.random.uniform(0.1, 0.25)
+            table_grey = 0.7
+            slider_grey = 0.1
+            color_range = sim_config.domain_randomization_color_range
 
             # randomize pusher and table
-            randomize_pusher()
+            randomize_pusher(color_range=color_range)
             randomize_table(
                 default_color=[table_grey, table_grey, table_grey],
                 color_range=color_range,
@@ -95,20 +98,10 @@ class IiwaHardwareStation(RobotSystemBase):
 
                 diffuse_elements = root.xpath("//model/link/visual/material/diffuse")
 
-                R = clamp(
-                    slider_grey + np.random.uniform(-color_range, color_range), 0.0, 1.0
+                slider_color = random_rgba_from_color_range(
+                    [slider_grey, slider_grey, slider_grey], color_range
                 )
-                G = clamp(
-                    slider_grey + np.random.uniform(-color_range, color_range), 0.0, 1.0
-                )
-                B = clamp(
-                    slider_grey + np.random.uniform(-color_range, color_range), 0.0, 1.0
-                )
-                A = 1  # assuming fully opaque
-
-                new_diffuse_value = (
-                    f"{R} {G} {B} {A}"  # Example: changing diffuse to white (R G B A)
-                )
+                new_diffuse_value = f"{slider_color.r()} {slider_color.g()} {slider_color.b()} {slider_color.a()}"
                 for diffuse in diffuse_elements:
                     diffuse.text = new_diffuse_value
 
@@ -122,12 +115,7 @@ class IiwaHardwareStation(RobotSystemBase):
         # Add cameras to scenario
         if sim_config.camera_configs:
             for camera_config in sim_config.camera_configs:
-                if sim_config.camera_randomization:
-                    scenario.cameras[camera_config.name] = randomize_camera_config(
-                        camera_config
-                    )
-                else:
-                    scenario.cameras[camera_config.name] = camera_config
+                scenario.cameras[camera_config.name] = camera_config
 
         self._check_scenario_and_sim_config_consistent(scenario, sim_config)
 

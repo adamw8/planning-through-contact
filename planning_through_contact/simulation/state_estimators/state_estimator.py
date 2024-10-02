@@ -66,16 +66,18 @@ class StateEstimator(Diagram):
         self._scene_graph = builder.AddNamedSystem("scene_graph", SceneGraph())
         self._plant.RegisterAsSourceForSceneGraph(self._scene_graph)
 
-        if not sim_config.domain_randomization:
+        if sim_config.domain_randomization_color_range <= 0.0:
             self.slider = AddSliderAndConfigureContact(
                 sim_config=sim_config, plant=self._plant, scene_graph=self._scene_graph
             )
         else:
-            table_grey = np.random.uniform(0.3, 0.95)
-            slider_grey = np.random.uniform(0.1, 0.25)
-            color_range = 0.025
+            # table_grey = np.random.uniform(0.3, 0.95)
+            # slider_grey = np.random.uniform(0.1, 0.25)
+            table_grey = 0.7
+            slider_grey = 0.1
+            color_range = sim_config.domain_randomization_color_range
 
-            randomize_pusher()
+            randomize_pusher(color_range=color_range)
             randomize_table(
                 default_color=[table_grey, table_grey, table_grey],
                 color_range=color_range,
@@ -93,8 +95,6 @@ class StateEstimator(Diagram):
             from pydrake.systems.sensors import ApplyCameraConfig
 
             for camera_config in sim_config.camera_configs:
-                if sim_config.camera_randomization:
-                    camera_config = randomize_camera_config(camera_config)
                 ApplyCameraConfig(
                     config=camera_config,
                     builder=builder,

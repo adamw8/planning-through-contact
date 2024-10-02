@@ -42,8 +42,7 @@ delay_before_execution: 5.0
 save_plots: false
 diffusion_policy_config:
   _target_: planning_through_contact.simulation.controllers.diffusion_policy_source.DiffusionPolicyConfig
-  # checkpoint: '/home/adam/workspace/gcs-diffusion/data/outputs/iiwa_multi_camera_test/checkpoints/latest.ckpt'
-  checkpoint: '/home/adam/workspace/gcs-diffusion/data/outputs/finetune/pretrained_2000/checkpoints/latest.ckpt'
+  checkpoint: '/home/adam/workspace/gcs-diffusion/data/outputs/iiwa_multi_camera_test/checkpoints/latest.ckpt'
   initial_pusher_pose: ${pusher_start_pose}
   target_slider_pose: ${slider_goal_pose}
   diffusion_policy_path: '/home/adam/workspace/gcs-diffusion'
@@ -99,7 +98,7 @@ camera_configs:
       a: 1.0
     show_rgb: false
     randomize: false
-domain_randomization_color_range: 0.025
+domain_randomization_color_range: 2.0 # fully random
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig
@@ -133,13 +132,13 @@ robot_station:
 data_collection_config:
   _target_: planning_through_contact.simulation.environments.data_collection_table_environment.DataCollectionConfig
   generate_plans: false
-  render_plans: false
-  convert_to_zarr: true
+  render_plans: true
+  convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   # plans_dir: 'trajectories/cotrain_data_v2'
-  plans_dir: 'trajectories/sim_tee_data/run_0'
-  rendered_plans_dir: 'trajectories_rendered/sim_tee_data'
-  zarr_path: 'trajectories_rendered/sim_tee_data.zarr'
+  plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data/run_0'
+  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_shift_level_3'
+  zarr_path: '/home/adam/workspace/planning-through-contact/trajectories_rendered/visual_shift_level_3.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
   action_chunk_length: 2048
@@ -154,7 +153,7 @@ data_collection_config:
     pusher_radius: 0.015
     contact_lam_min: 0.2
     contact_lam_max: 0.8
-    distance_to_object: 0.25
+    distance_to_object_socp: 0.25
     ang_velocity_regularization: 25 # null
     width: 0.35
     height: 0.5

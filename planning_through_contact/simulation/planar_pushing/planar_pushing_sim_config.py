@@ -7,6 +7,7 @@ import numpy.typing as npt
 from omegaconf import OmegaConf
 from pydrake.all import Rgba, RollPitchYaw
 from pydrake.common.schema import Transform
+from pydrake.geometry import LightParameter, RenderEngineVtkParams
 from pydrake.math import RigidTransform, RotationMatrix
 from pydrake.multibody.plant import ContactModel
 from pydrake.systems.sensors import CameraConfig
@@ -31,7 +32,10 @@ from planning_through_contact.simulation.controllers.diffusion_policy_source imp
     DiffusionPolicyConfig,
 )
 from planning_through_contact.simulation.controllers.hybrid_mpc import HybridMpcConfig
-from planning_through_contact.simulation.sim_utils import get_slider_start_poses
+from planning_through_contact.simulation.sim_utils import (
+    get_slider_start_poses,
+    randomize_camera_config,
+)
 from planning_through_contact.tools.utils import PhysicalProperties
 
 
@@ -152,13 +156,13 @@ class PlanarPushingSimConfig:
     use_hardware: bool = False
     pusher_z_offset: float = 0.05
     camera_configs: List[CameraConfig] = None
-    domain_randomization: bool = False
-    camera_randomization: bool = False
+    domain_randomization_color_range: float = 0.0
     log_dir: str = (
         None  # directory for logging rollouts from output_feedback_table_environments
     )
     multi_run_config: MultiRunConfig = None
     slider_physical_properties: PhysicalProperties = None
+    arbitrary_shape_rgba: np.ndarray = np.array([0.0, 0.0, 0.0, 1.0])
 
     @classmethod
     def from_traj(cls, trajectory: PlanarPushingTrajectory, **kwargs):
@@ -214,9 +218,9 @@ class PlanarPushingSimConfig:
             use_hardware=cfg.use_hardware,
             pusher_z_offset=cfg.pusher_z_offset,
             log_dir=cfg.log_dir,
-            domain_randomization=cfg.domain_randomization,
-            camera_randomization=cfg.camera_randomization,
+            domain_randomization_color_range=cfg.domain_randomization_color_range,
             slider_physical_properties=slider_physical_properties,
+            arbitrary_shape_rgba=np.array(cfg.arbitrary_shape_rgba),
         )
 
         # Optional fields
@@ -269,7 +273,31 @@ class PlanarPushingSimConfig:
                         and key in camera_config_attrs
                     ):
                         kwargs[key] = camera_config[key]
-                camera_configs.append(CameraConfig(**kwargs))
+
+                if "light_direction" in camera_config:
+                    # Create renderer and set light direction
+                    renderer_params = RenderEngineVtkParams()
+                    renderer_params.default_clear_color = np.array(
+                        [
+                            camera_config.background.r,
+                            camera_config.background.g,
+                            camera_config.background.b,
+                        ]
+                    )
+                    direction = np.array(camera_config["light_direction"])
+                    direction = direction / np.linalg.norm(direction)
+                    renderer_params.lights = [LightParameter(direction=direction)]
+                    drake_camera_config = CameraConfig(
+                        renderer_name=camera_config.name,
+                        renderer_class=renderer_params,
+                        **kwargs,
+                    )
+                else:
+                    drake_camera_config = CameraConfig(**kwargs)
+
+                if camera_config.randomize:
+                    drake_camera_config = randomize_camera_config(drake_camera_config)
+                camera_configs.append(drake_camera_config)
             sim_config.camera_configs = camera_configs
         if "multi_run_config" in cfg and cfg.multi_run_config:
             sim_config.multi_run_config = hydra.utils.instantiate(cfg.multi_run_config)
@@ -310,6 +338,8 @@ class PlanarPushingSimConfig:
             and np.allclose(self.default_joint_positions, other.default_joint_positions)
             and self.diffusion_policy_config == other.diffusion_policy_config
             and self.multi_run_config == other.multi_run_config
-            and self.domain_randomization == other.domain_randomization
-            and self.camera_randomization == other.camera_randomization
+            and self.domain_randomization_color_range
+            == other.domain_randomization_color_range
+            and np.allclose(self.arbitrary_shape_rgba, other.arbitrary_shape_rgba)
+            and self.slider_physical_properties == other.slider_physical_properties
         )

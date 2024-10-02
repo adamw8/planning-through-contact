@@ -5,6 +5,10 @@
 ---
 
 ## Installation (Linux and MacOS)
+If you run into Git LFS errors while attempting to clone the repository, try setting `GIT_LFS_SKIP_SMUDGE=1`.
+```
+GIT_LFS_SKIP_SMUDGE=1 git clone git@github.com:adamw8/planning-through-contact.git
+```
 
 This repo uses Poetry for dependency management. To setup this project, first
 install [Poetry](https://python-poetry.org/docs/#installation) and, make sure

@@ -1,5 +1,7 @@
 import logging
+import os
 import pathlib
+import pickle
 import time as pytime
 from collections import deque
 from typing import List, Optional, Tuple
@@ -40,6 +42,7 @@ class DiffusionPolicyController(LeafSystem):
         delay: float = 1.0,
         device="cuda:0",
         debug: bool = False,
+        save_logs: bool = False,
         cfg_overrides: dict = {},
     ):
         super().__init__()
@@ -66,11 +69,8 @@ class DiffusionPolicyController(LeafSystem):
         self._B = 1  # batch size is 1
 
         # indexing parameters for action predictions
-        self._start = self._obs_horizon - 1
-        self._start += 1
-        if "push_tee_v2" in checkpoint:  # for backwards compatibility
-            print("Using push_tee_v2 slicing for action predictions")
-            self._start += 1
+        # Note: this used to be self._state = self._obs_horizon - 1
+        self._start = self._obs_horizon
         self._end = self._start + self._action_steps
 
         # variables for DoCalcOutput
@@ -116,6 +116,19 @@ class DiffusionPolicyController(LeafSystem):
             for name in self.camera_port_dict.keys()
         }
 
+        # Logging data structures
+        self._save_logs = save_logs
+        if self._save_logs:
+            self._logs = {
+                "checkpoint": self._checkpoint,
+                "actions": [],  # N x action horizon x action dim
+                "poses": [],  # N x observation horizon x pose dim
+                "images": {
+                    name: [] for name in self.camera_port_dict.keys()
+                },  # N x observation horizon x H x W x C
+                "embeddings": [],  # N x embedding dim
+            }
+
     def _load_policy_from_checkpoint(self, checkpoint: str):
         # load checkpoint
         payload = torch.load(open(checkpoint, "rb"), pickle_module=dill)
@@ -125,25 +138,7 @@ class DiffusionPolicyController(LeafSystem):
         workspace: BaseWorkspace
         workspace = cls(self._cfg)
         workspace.load_payload(payload, exclude_keys=None, include_keys=None)
-
-        # get normalizer: this might be expensive for larger datasets
-        LEGACY_COTRAIN_DATASET = "diffusion_policy.dataset.drake_cotrain_planar_pushing_hybrid_dataset.DrakeCotrainPlanarPushingHybridDataset"
-        PLANAR_PUSHING_DATASET = (
-            "diffusion_policy.dataset.planar_pushing_dataset.PlanarPushingDataset"
-        )
-        cotraining_datasets = [LEGACY_COTRAIN_DATASET, PLANAR_PUSHING_DATASET]
-        if self._cfg.task.dataset._target_ in cotraining_datasets:
-            zarr_configs = self._cfg.task.dataset.zarr_configs
-            for config in zarr_configs:
-                config["path"] = self._diffusion_policy_path.joinpath(config["path"])
-        else:
-            self._cfg.task.dataset.zarr_path = self._diffusion_policy_path.joinpath(
-                self._cfg.task.dataset.zarr_path
-            )
-            print(f"Zarr path: {self._cfg.task.dataset.zarr_path}")
-
-        dataset: BaseImageDataset = hydra.utils.instantiate(self._cfg.task.dataset)
-        self._normalizer = dataset.get_normalizer()  # TODO: this might not be needed
+        self._normalizer = self._load_normalizer()
 
         # get policy from workspace
         self._policy = workspace.model
@@ -184,6 +179,24 @@ class DiffusionPolicyController(LeafSystem):
                 action_prediction = self._policy.predict_action(
                     obs_dict, use_DDIM=True
                 )["action_pred"][0]
+
+                # Save logs
+                if self._save_logs:
+                    self._logs["actions"].append(action_prediction.cpu().numpy())
+                    self._logs["poses"].append(
+                        np.array([pose for pose in self._pusher_pose_deque])
+                    )
+                    for camera, image_deque in self._image_deque_dict.items():
+                        self._logs["images"][camera].append(
+                            np.array([img for img in image_deque])
+                        )
+                    self._logs["embeddings"].append(
+                        self._policy.compute_obs_embedding(obs_dict)
+                        .cpu()
+                        .numpy()
+                        .flatten()
+                    )
+
             actions = action_prediction[self._start : self._end]
             for action in actions:
                 self._actions.append(action.cpu().numpy())
@@ -224,7 +237,9 @@ class DiffusionPolicyController(LeafSystem):
         for image_deque in self._image_deque_dict.values():
             image_deque.clear()
 
-    def _deque_to_dict(self, obs_deque: deque, img_deque: deque, target: np.ndarray):
+    def _deque_to_dict(
+        self, obs_deque: deque, image_deque_dict: dict, target: np.ndarray
+    ):
         state_tensor = torch.cat(
             [torch.from_numpy(obs) for obs in obs_deque], dim=0
         ).reshape(self._B, self._obs_horizon, self._state_dim)
@@ -238,10 +253,10 @@ class DiffusionPolicyController(LeafSystem):
         }
 
         # Load images into data dict
-        for camera, image_deque in self._image_deque_dict.items():
+        for camera, image_deque in image_deque_dict.items():
             img_tensor = torch.cat(
                 [
-                    torch.from_numpy(np.moveaxis(img, -1, -3) / 255.0)
+                    torch.from_numpy(np.moveaxis(img, -1, -3) / 255.0)  # C H W
                     for img in image_deque
                 ],
                 dim=0,
@@ -252,7 +267,7 @@ class DiffusionPolicyController(LeafSystem):
                 self._camera_shape_dict[camera][1],  # H
                 self._camera_shape_dict[camera][2],  # W
             )
-            data["obs"][camera] = img_tensor.to(self._device)  # 1, T_obs, C, W, H
+            data["obs"][camera] = img_tensor.to(self._device)  # 1, T_obs, C, H, W
 
         return data
 
@@ -271,4 +286,49 @@ class DiffusionPolicyController(LeafSystem):
             image_width = self._camera_shape_dict[camera][2]
             if image.shape[0] != image_height or image.shape[1] != image_width:
                 image = cv2.resize(image, (image_width, image_height))
-            self._image_deque_dict[camera].append(image[:, :, :-1])  # C H W
+            self._image_deque_dict[camera].append(image[:, :, :-1])  # H W C
+
+    def _load_normalizer(self):
+        normalizer_path = self._checkpoint.parent.parent.joinpath("normalizer.pt")
+        if os.path.exists(normalizer_path):
+            return torch.load(normalizer_path)
+        else:
+            # get normalizer: this might be expensive for larger datasets
+            LEGACY_COTRAIN_DATASET = "diffusion_policy.dataset.drake_cotrain_planar_pushing_hybrid_dataset.DrakeCotrainPlanarPushingHybridDataset"
+            PLANAR_PUSHING_DATASET = (
+                "diffusion_policy.dataset.planar_pushing_dataset.PlanarPushingDataset"
+            )
+            cotraining_datasets = [LEGACY_COTRAIN_DATASET, PLANAR_PUSHING_DATASET]
+            # Fix config paths for datasets
+            if self._cfg.task.dataset._target_ in cotraining_datasets:
+                zarr_configs = self._cfg.task.dataset.zarr_configs
+                for config in zarr_configs:
+                    config["path"] = self._diffusion_policy_path.joinpath(
+                        config["path"]
+                    )
+            else:
+                self._cfg.task.dataset.zarr_path = self._diffusion_policy_path.joinpath(
+                    self._cfg.task.dataset.zarr_path
+                )
+
+            # Extract and save normalizer
+            dataset: BaseImageDataset = hydra.utils.instantiate(self._cfg.task.dataset)
+            normalizer = dataset.get_normalizer()
+            torch.save(normalizer, normalizer_path)
+            return normalizer
+
+    def save_logs_to_file(self, save_path: str):
+        if self._save_logs:
+            # Convert logs to numpy
+            self._logs["actions"] = np.array(self._logs["actions"])
+            self._logs["poses"] = np.array(self._logs["poses"])
+            self._logs["embeddings"] = np.array(self._logs["embeddings"])
+            for camera in self._logs["images"].keys():
+                self._logs["images"][camera] = np.array(self._logs["images"][camera])
+
+            # Save logs to file
+            with open(save_path, "wb") as f:
+                pickle.dump(self._logs, f)
+            logger.info(f"Saved logs to {save_path}")
+        else:
+            logger.warning("No logs to save. Set save_logs=True to save logs.")
