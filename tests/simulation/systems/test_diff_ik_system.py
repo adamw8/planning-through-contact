@@ -91,7 +91,7 @@ def test_diff_ik_system(diff_ik_plant, default_joint_positions, desired_pose, st
     # Check output
     context = simulator.get_context()
     output = diagram.GetOutputPort("q_output").Eval(context)
-    desired_q = np.array([0.4118, 0.8786, -0.6505, -1.4509, 0.5894, 1.0105, 2.7613])
+    desired_q = np.array([0.41, 0.88, -0.65, -1.45, 0.59, 1.01, 2.76])
     assert np.allclose(output, desired_q, atol=1e-4)
 
 

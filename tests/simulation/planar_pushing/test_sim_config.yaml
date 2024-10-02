@@ -68,7 +68,6 @@ multi_run_config:
   slider_goal_pose: ${slider_goal_pose}
   workspace_width: 0.5
   workspace_height: 0.5
-  arbitrary_shape_pickle_path: ${arbitrary_shape_pickle_path}
 domain_randomization_color_range: 0.0
 ## Robot specific configs
 # sim_config
