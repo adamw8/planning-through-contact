@@ -120,6 +120,9 @@ def get_slider_sdf_path(sim_config, models_folder: str) -> str:
         slider_sdf_url = f"{models_folder}/t_pusher.sdf"
     elif isinstance(sim_config.slider.geometry, ArbitraryShape2D):
         slider_sdf_url = f"{models_folder}/arbitrary_shape.sdf"
+    elif isinstance(sim_config.slider.geometry, VertexDefinedGeometry):
+        # TODO: sdf logic here
+        slider_sdf_url = f"{models_folder}/vertex_defined_geometry.sdf"
     else:
         raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     return slider_sdf_url

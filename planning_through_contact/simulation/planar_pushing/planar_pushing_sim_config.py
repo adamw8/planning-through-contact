@@ -16,6 +16,10 @@ from planning_through_contact.experiments.utils import (
     get_arbitrary,
     get_box,
     get_default_plan_config,
+    get_irregular_hexagon,
+    get_irregular_pentagon,
+    get_irregular_triangle,
+    get_sugar_box,
     get_tee,
 )
 from planning_through_contact.geometry.planar.planar_pose import PlanarPose
@@ -193,6 +197,14 @@ class PlanarPushingSimConfig:
                 slider_physical_properties.mass,
                 slider_physical_properties.center_of_mass,
             )
+        elif cfg.slider_type == "sugar_box":
+            slider = get_sugar_box()
+        elif cfg.slider_type == "irregular_triangle":
+            slider = get_irregular_triangle()
+        elif cfg.slider_type == "irregular_pentagon":
+            slider = get_irregular_pentagon()
+        elif cfg.slider_type == "irregular_hexagon":
+            slider = get_irregular_hexagon()
         else:
             raise ValueError(f"Slider type not yet implemented: {cfg.slider_type}")
         dynamics_config: SliderPusherSystemConfig = hydra.utils.instantiate(

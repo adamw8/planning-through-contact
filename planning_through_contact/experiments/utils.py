@@ -13,6 +13,9 @@ from planning_through_contact.geometry.collision_geometry.arbitrary_shape_2d imp
 )
 from planning_through_contact.geometry.collision_geometry.box_2d import Box2d
 from planning_through_contact.geometry.collision_geometry.t_pusher_2d import TPusher2d
+from planning_through_contact.geometry.collision_geometry.vertex_defined_geometry import (
+    VertexDefinedGeometry,
+)
 from planning_through_contact.geometry.planar.planar_pose import PlanarPose
 from planning_through_contact.geometry.rigid_body import RigidBody
 from planning_through_contact.planning.planar.planar_plan_config import (
@@ -77,6 +80,46 @@ def get_sugar_box() -> RigidBody:
     box_geometry = Box2d(width=0.106, height=0.185)
     slider = RigidBody("sugar_box", box_geometry, mass)
     return slider
+
+
+def get_irregular_triangle() -> RigidBody:
+    vertices = [[0, 0], [0.025, 0.15], [0.165, 0]]
+    scale = 1.0
+    vertices = [np.array(v) * scale for v in vertices]
+    # shift vertices
+    approx_com = sum(vertices) / len(vertices)
+    vertices = [v - approx_com for v in vertices]
+    geometry = VertexDefinedGeometry(vertices)
+    return RigidBody("irregular_triangle", geometry, mass=0.1)
+
+
+def get_irregular_pentagon() -> RigidBody:
+    vertices = [[0, 0], [0, 0.144], [0.075, 0.12], [0.14, 0.055], [0.127, 0]]
+    scale = 1.0
+    vertices = [np.array(v) * scale for v in vertices]
+    # shift vertices
+    approx_com = sum(vertices) / len(vertices)
+    vertices = [v - approx_com for v in vertices]
+    geometry = VertexDefinedGeometry(vertices)
+    return RigidBody("irregular_pentagon", geometry, mass=0.1)
+
+
+def get_irregular_hexagon() -> RigidBody:
+    vertices = [
+        [0, 0],
+        [-0.03, 0.08],
+        [0.02, 0.134],
+        [0.08, 0.15],
+        [0.121, 0.119],
+        [0.076, 0.0],
+    ]
+    scale = 1.0
+    vertices = [np.array(v) * scale for v in vertices]
+    # shift vertices
+    approx_com = sum(vertices) / len(vertices)
+    vertices = [v - approx_com for v in vertices]
+    geometry = VertexDefinedGeometry(vertices)
+    return RigidBody("irregular_hexagon", geometry, mass=0.1)
 
 
 def get_default_contact_cost() -> ContactCost:
@@ -152,14 +195,25 @@ def get_default_plan_config(
     if slider_type == "box":
         slider = get_box(mass)
     elif slider_type == "sugar_box":
-        slider = get_sugar_box(mass)
+        slider = get_sugar_box()
+    elif slider_type == "convex_4":
+        slider = get_four_corner_slider()
+    elif slider_type == "convex_5":
+        slider = get_five_corner_slider()
+    elif slider_type == "triangle":
+        slider = get_triangle()
+    elif slider_type == "irregular_triangle":
+        slider = get_irregular_triangle()
+    elif slider_type == "irregular_pentagon":
+        slider = get_irregular_pentagon()
+    elif slider_type == "irregular_hexagon":
+        slider = get_irregular_hexagon()
     elif slider_type == "tee":
         slider = get_tee(mass)
     elif slider_type == "arbitrary":
         slider = get_arbitrary(arbitrary_shape_pickle_path, mass, com)
     else:
         raise NotImplementedError(f"Slider type {slider_type} not supported")
-
     if hardware:
         slider_pusher_config = SliderPusherSystemConfig(
             slider=slider,

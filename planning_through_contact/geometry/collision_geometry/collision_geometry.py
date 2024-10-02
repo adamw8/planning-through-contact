@@ -36,10 +36,10 @@ class CollisionGeometry(ABC):
     with all of the helper functions required by the planner.
     """
 
-    @property
-    @abstractmethod
-    def collision_geometry_names(self) -> List[str]:
-        ...
+    # @property
+    # @abstractmethod
+    # def collision_geometry_names(self) -> List[str]:
+    #     ...
 
     @property
     @abstractmethod
@@ -89,10 +89,10 @@ class CollisionGeometry(ABC):
     def get_face_length(self, location: PolytopeContactLocation) -> float:
         pass
 
-    @classmethod
-    @abstractmethod
-    def from_drake(cls, drake_shape: DrakeShape):
-        pass
+    # @classmethod
+    # @abstractmethod
+    # def from_drake(cls, drake_shape: DrakeShape):
+    #     pass
 
     def get_shortest_vec_from_com_to_loc(
         self, location: PolytopeContactLocation
