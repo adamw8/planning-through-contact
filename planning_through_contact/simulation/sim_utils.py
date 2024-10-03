@@ -113,7 +113,9 @@ def GetSliderUrl(sim_config, format: Literal["sdf", "yaml"] = "sdf"):
         slider_sdf_url = f"package://planning_through_contact/arbitrary_shape.{format}"
     elif isinstance(sim_config.slider.geometry, VertexDefinedGeometry):
         # TODO: sdf logic here
-        slider_sdf_url = f"{models_folder}/irregular_polygons/triangle.sdf"
+        slider_sdf_url = (
+            f"package://planning_through_contact/irregular_polygons/triangle.{format}"
+        )
     else:
         raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     return slider_sdf_url

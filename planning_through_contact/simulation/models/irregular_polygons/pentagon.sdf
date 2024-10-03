@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="pentagon_pushee_model">
+  <model name="irregular_pentagon">
     <!-- Link containing the mesh -->
     <link name="pentagon_pushee_link">
       

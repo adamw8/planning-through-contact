@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="triangle_pushee_model">
+  <model name="irregular_triangle">
     <!-- Link containing the mesh -->
     <link name="triangle_pushee_link">
       

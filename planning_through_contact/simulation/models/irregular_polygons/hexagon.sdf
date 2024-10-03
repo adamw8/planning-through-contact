@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="hexagon_pushee_model">
+  <model name="irregular_hexagon">
     <!-- Link containing the mesh -->
     <link name="hexagon_pushee_link">
       
