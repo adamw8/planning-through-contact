@@ -7,7 +7,7 @@
       <!-- Visual representation of the mesh -->
       <visual name="irregular_hexagon">
         <pose>
-          -0.0318333 -0.093166 0.0 -0.0 0.0 0.0
+          -0.0445 -0.0805 0.0 -0.0 0.0 0.0
         </pose>
         <geometry>
           <mesh>
