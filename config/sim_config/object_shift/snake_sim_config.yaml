@@ -8,7 +8,7 @@ dynamics_config:
   integration_constant: 0.3
   force_scale: 0.01
 slider_type: 'arbitrary'
-arbitrary_shape_pickle_path: arbitrary_shape_pickles/snake.pkl
+arbitrary_shape_pickle_path: /home/adam/workspace/planning-through-contact/arbitrary_shape_pickles/snake.pkl
 arbitrary_shape_rgba: [0.1, 0.1, 0.1, 1.0]
 arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
