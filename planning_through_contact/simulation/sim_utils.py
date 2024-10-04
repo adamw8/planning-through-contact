@@ -112,10 +112,15 @@ def GetSliderUrl(sim_config, format: Literal["sdf", "yaml"] = "sdf"):
     elif isinstance(sim_config.slider.geometry, ArbitraryShape2D):
         slider_sdf_url = f"package://planning_through_contact/arbitrary_shape.{format}"
     elif isinstance(sim_config.slider.geometry, VertexDefinedGeometry):
-        # TODO: determine which file name to return
-        slider_sdf_url = (
-            f"package://planning_through_contact/irregular_polygons/triangle.{format}"
-        )
+        name = sim_config.slider.name
+        if name == "irregular_triangle":
+            slider_sdf_url = f"package://planning_through_contact/irregular_polygons/triangle.{format}"
+        elif name == "irregular_pentagon":
+            slider_sdf_url = f"package://planning_through_contact/irregular_polygons/pentagon.{format}"
+        elif name == "irregular_hexagon":
+            slider_sdf_url = f"package://planning_through_contact/irregular_polygons/hexagon.{format}"
+        else:
+            raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     else:
         raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     return slider_sdf_url
@@ -129,8 +134,15 @@ def get_slider_sdf_path(sim_config, models_folder: str) -> str:
     elif isinstance(sim_config.slider.geometry, ArbitraryShape2D):
         slider_sdf_url = f"{models_folder}/arbitrary_shape.sdf"
     elif isinstance(sim_config.slider.geometry, VertexDefinedGeometry):
-        # TODO: determine which file name to return
-        slider_sdf_url = f"{models_folder}/irregular_polygons/triangle.sdf"
+        name = sim_config.slider.name
+        if name == "irregular_triangle":
+            slider_sdf_url = f"{models_folder}/irregular_polygons/triangle.sdf"
+        elif name == "irregular_pentagon":
+            slider_sdf_url = f"{models_folder}/irregular_polygons/pentagon.sdf"
+        elif name == "irregular_hexagon":
+            slider_sdf_url = f"{models_folder}/irregular_polygons/hexagon.sdf"
+        else:
+            raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     else:
         raise NotImplementedError(f"Body '{sim_config.slider}' not supported")
     return slider_sdf_url
