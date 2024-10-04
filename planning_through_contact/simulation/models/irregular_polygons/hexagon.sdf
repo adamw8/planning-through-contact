@@ -2,10 +2,13 @@
 <sdf version="1.6">
   <model name="irregular_hexagon">
     <!-- Link containing the mesh -->
-    <link name="hexagon_pushee_link">
+    <link name="irregular_hexagon">
       
       <!-- Visual representation of the mesh -->
-      <visual name="hexagon_pushee_visual">
+      <visual name="irregular_hexagon">
+        <pose>
+          -0.0318333 -0.093166 0.0 -0.0 0.0 0.0
+        </pose>
         <geometry>
           <mesh>
             <uri>hexagon.obj</uri>
@@ -15,13 +18,40 @@
 
         <!-- Assigning black color to the mesh -->
         <material>
-          <ambient>0 0 0 1</ambient>
-          <diffuse>0 0 0 1</diffuse>
-          <specular>0 0 0 1</specular>
-          <emissive>0 0 0 1</emissive>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
+          <emissive>0.1 0.1 0.1 1</emissive>
         </material>
       </visual>
       
+      <!-- Dummy collision geometry! -->
+      <collision name="collision_0">
+        <pose>
+            0.0 0.0 0.0 -0.0 0.0 0.0
+        </pose>
+        <geometry>
+          <box>
+              <size>1 1 0.040875</size>
+          </box>
+        </geometry>
+            
+        <drake:proximity_properties>
+          <drake:compliant_hydroelastic/>
+          <drake:hydroelastic_modulus>
+              1000000.0
+          </drake:hydroelastic_modulus>
+          <drake:mesh_resolution_hint>
+              0.01
+          </drake:mesh_resolution_hint>
+          <drake:mu_dynamic>
+              0.5
+          </drake:mu_dynamic>
+          <drake:mu_static>
+              0.5
+          </drake:mu_static>
+        </drake:proximity_properties>
+      </collision>
     </link>
   </model>
 </sdf>
