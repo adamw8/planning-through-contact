@@ -48,13 +48,10 @@ from planning_through_contact.simulation.planar_pushing.planar_pushing_sim_confi
     PlanarPushingSimConfig,
 )
 from planning_through_contact.simulation.sim_utils import (
+    create_arbitrary_shape_sdf_file,
     get_slider_pose_within_workspace,
     get_slider_sdf_path,
     models_folder,
-)
-from planning_through_contact.tools.utils import (
-    create_processed_mesh_primitive_sdf_file,
-    load_primitive_info,
 )
 from planning_through_contact.visualize.colors import COLORS
 from planning_through_contact.visualize.planar_pushing import make_traj_figure
@@ -850,30 +847,6 @@ def _create_directory(dir_path):
         shutil.rmtree(dir_path)
     else:
         os.makedirs(dir_path)
-
-
-def create_arbitrary_shape_sdf_file(cfg: OmegaConf, sim_config: PlanarPushingSimConfig):
-    sdf_path = get_slider_sdf_path(sim_config, models_folder)
-    if os.path.exists(sdf_path):
-        os.remove(sdf_path)
-
-    translation = -np.concatenate(
-        [sim_config.slider.geometry.com_offset.flatten(), [0]]
-    )  # Plan assumes that object frame = CoM frame
-
-    primitive_info = load_primitive_info(cfg.arbitrary_shape_pickle_path)
-    create_processed_mesh_primitive_sdf_file(
-        primitive_info=primitive_info,
-        visual_mesh_file_path=cfg.arbitrary_shape_visual_mesh_path,
-        physical_properties=hydra.utils.instantiate(cfg.physical_properties),
-        global_translation=translation,
-        output_file_path=sdf_path,
-        model_name="arbitrary",
-        base_link_name="arbitrary",
-        is_hydroelastic="hydroelastic" in cfg.contact_model.lower(),
-        rgba=sim_config.arbitrary_shape_rgba,
-        com_override=[0.0, 0.0, 0.0],  # Plan assumes that object frame = CoM frame
-    )
 
 
 if __name__ == "__main__":

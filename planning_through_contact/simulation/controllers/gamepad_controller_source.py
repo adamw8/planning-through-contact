@@ -38,6 +38,9 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
             self._gamepad_controller.GetInputPort("pusher_pose_measured"),
             "pusher_pose_measured",
         )
+        builder.ExportInput(
+            self._gamepad_controller.GetInputPort("run_flag"), "run_flag"
+        )
         builder.ExportOutput(
             self._gamepad_controller.get_output_port(), "planar_position_command"
         )

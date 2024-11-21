@@ -53,6 +53,7 @@ class GamepadController(LeafSystem):
             "pusher_pose_measured",
             AbstractValue.Make(RigidTransform()),
         )
+        self.run_flag_port = self.DeclareVectorInputPort("run_flag", 1)
 
         self.output = self.DeclareVectorOutputPort(
             "planar_position_command", 2, self.DoCalcOutput
@@ -69,17 +70,21 @@ class GamepadController(LeafSystem):
     def DoCalcOutput(self, context: Context, output):
         # Read in pose
         pusher_pose: RigidTransform = self.pusher_pose_measured.Eval(context)  # type: ignore
+        run_flag = round(self.run_flag_port.Eval(context)[0])
         curr_xy = PlanarPose.from_pose(pusher_pose).pos().reshape(2)
+
+        if self.init_xy is None and run_flag == 1:
+            self.init_xy = curr_xy
+        elif self.init_xy is None:
+            output.SetFromVector([0.0, 0.0])
+            return
 
         # Get offset from gamepad
         xy_offset = self.get_xy_offset()
 
-        # Compute target pose
-        if self.init_xy is None:
-            self.init_xy = curr_xy
+        # Compute and set target pose
         target_xy = self.init_xy + xy_offset
         self.init_xy = target_xy
-
         output.SetFromVector(target_xy)
 
     def get_xy_offset(self):
