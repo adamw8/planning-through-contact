@@ -48,7 +48,7 @@ class ResetStatus(Enum):
     NO_RESET = "no_reset"
 
 
-class OutputFeedbackTableEnvironment:
+class SimulatedRealTableEnvironment:
     def __init__(
         self,
         desired_position_source: DesiredPlanarPositionSourceBase,
@@ -138,11 +138,11 @@ class OutputFeedbackTableEnvironment:
             self._robot_state_to_rigid_transform.GetOutputPort("pose"),
             self._desired_position_source.GetInputPort("pusher_pose_measured"),
         )
-        for camera_config in self._sim_config.camera_configs:
-            builder.Connect(
-                self._robot_system.GetOutputPort(f"rgbd_sensor_{camera_config.name}"),
-                self._desired_position_source.GetInputPort(camera_config.name),
-            )
+        # for camera_config in self._sim_config.camera_configs:
+        #     builder.Connect(
+        #         self._robot_system.GetOutputPort(f"rgbd_sensor_{camera_config.name}"),
+        #         self._desired_position_source.GetInputPort(camera_config.name),
+        #     )
 
         # Inputs to robot system
         builder.Connect(

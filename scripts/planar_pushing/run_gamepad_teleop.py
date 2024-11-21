@@ -13,11 +13,14 @@ from pydrake.all import StartMeshcat
 from planning_through_contact.simulation.controllers.diffusion_policy_source import (
     DiffusionPolicySource,
 )
+from planning_through_contact.simulation.controllers.gamepad_controller_source import (
+    GamepadControllerSource,
+)
 from planning_through_contact.simulation.controllers.robot_system_base import (
     RobotSystemBase,
 )
-from planning_through_contact.simulation.environments.output_feedback_table_environment import (
-    OutputFeedbackTableEnvironment,
+from planning_through_contact.simulation.environments.simulated_real_table_environment import (
+    SimulatedRealTableEnvironment,
 )
 from planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config import (
     PlanarPushingSimConfig,
@@ -34,7 +37,7 @@ from planning_through_contact.tools.utils import (
 
 @hydra.main(
     version_base=None,
-    config_path=str(pathlib.Path(__file__).parents[3].joinpath("config", "sim_config")),
+    config_path=str(pathlib.Path(__file__).parents[2].joinpath("config", "sim_config")),
 )
 def run_sim(cfg: OmegaConf):
     logging.basicConfig(level=logging.INFO)
@@ -57,7 +60,8 @@ def run_sim(cfg: OmegaConf):
         create_arbitrary_shape_sdf_file(cfg, sim_config)
 
     # Diffusion Policy source
-    position_source = DiffusionPolicySource(sim_config.diffusion_policy_config)
+    # position_source = DiffusionPolicySource(sim_config.diffusion_policy_config)
+    position_source = GamepadControllerSource(station_meshcat)
     if save_logs:
         pickled_logs_dir = "pickled_logs"  # TODO: make this a config option
 
@@ -89,7 +93,7 @@ def run_sim(cfg: OmegaConf):
     )
 
     # Set up environment
-    environment = OutputFeedbackTableEnvironment(
+    environment = SimulatedRealTableEnvironment(
         desired_position_source=position_source,
         robot_system=position_controller,
         sim_config=sim_config,
