@@ -13,6 +13,9 @@ from pydrake.all import StartMeshcat
 from planning_through_contact.simulation.controllers.diffusion_policy_source import (
     DiffusionPolicySource,
 )
+from planning_through_contact.simulation.controllers.gamepad_controller_source import (
+    GamepadControllerSource,
+)
 from planning_through_contact.simulation.controllers.robot_system_base import (
     RobotSystemBase,
 )
@@ -57,7 +60,8 @@ def run_sim(cfg: OmegaConf):
         create_arbitrary_shape_sdf_file(cfg, sim_config)
 
     # Diffusion Policy source
-    position_source = DiffusionPolicySource(sim_config.diffusion_policy_config)
+    # position_source = DiffusionPolicySource(sim_config.diffusion_policy_config)
+    position_source = GamepadControllerSource(station_meshcat)
     if save_logs:
         pickled_logs_dir = "pickled_logs"  # TODO: make this a config option
 
