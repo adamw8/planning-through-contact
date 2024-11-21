@@ -22,6 +22,9 @@ from planning_through_contact.planning.planar.planar_plan_config import (
 from planning_through_contact.simulation.controllers.desired_planar_position_source_base import (
     DesiredPlanarPositionSourceBase,
 )
+from planning_through_contact.simulation.controllers.gamepad_controller_source import (
+    GamepadControllerSource,
+)
 from planning_through_contact.simulation.controllers.robot_system_base import (
     RobotSystemBase,
 )
@@ -208,46 +211,6 @@ class SimulatedRealTableEnvironment:
             self.mbp_context, self._robot_model_instance, q_v
         )
 
-    def simulate(
-        self,
-        timeout=1e8,
-        recording_file: Optional[str] = None,
-        for_reset: bool = False,
-    ):
-        if recording_file:
-            self._meshcat.StartRecording()
-        time_step = self._sim_config.time_step * 10
-        for t in np.append(np.arange(0, timeout, time_step), timeout):
-            self._simulator.AdvanceTo(t)
-            # visualization of target pose
-            if len(self._goal_geometries) == 0:
-                self._goal_geometries = create_goal_geometries(
-                    self._robot_system,
-                    self._sim_config.slider_goal_pose,
-                )
-            # TODO: write a nice wrapper for this function
-            visualize_desired_slider_pose(
-                self._robot_system,
-                self._sim_config.slider_goal_pose,
-                self._goal_geometries,
-                time_in_recording=t,
-            )
-
-            # Print every 5 seconds
-            if t % 5 == 0:
-                logger.info(f"t={t}")
-
-        traj_idx = 0
-        if os.path.exists(self._sim_config.log_dir):
-            for path in os.listdir(self._sim_config.log_dir):
-                if os.path.isdir(os.path.join(self._sim_config.log_dir, path)):
-                    traj_idx += 1
-        os.makedirs(os.path.join(self._sim_config.log_dir, str(traj_idx)))
-        save_dir = pathlib.Path(self._sim_config.log_dir).joinpath(str(traj_idx))
-
-        if recording_file:
-            self.save_recording(recording_file, self._sim_config.save_dir)
-
     def visualize_desired_slider_pose(self, time_in_recording: float = 0.0):
         if len(self._goal_geometries) == 0:
             self._goal_geometries = create_goal_geometries(
@@ -291,3 +254,9 @@ class SimulatedRealTableEnvironment:
                 recording_file = os.path.join(save_dir, recording_file)
             with open(recording_file, "w") as f:
                 f.write(res)
+
+    def get_button_values(self):
+        if isinstance(self._desired_position_source, GamepadControllerSource):
+            return self._desired_position_source.get_button_values()
+        else:
+            raise NotImplementedError

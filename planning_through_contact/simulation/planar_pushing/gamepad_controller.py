@@ -28,24 +28,25 @@ class GamepadController(LeafSystem):
 
         self.init_xy = None
         self.prev_button_values = [0.0 for _ in range(17)]
+
         self.button_index = {
-            "A": 0,
-            "B": 1,
-            "X": 2,
-            "Y": 3,
-            "LB": 4,
-            "RB": 5,
-            "LT": 6,
-            "RT": 7,
-            "BACK": 8,
-            "START": 9,
-            "LS": 10,
-            "RS": 11,
-            "UP": 12,
-            "DOWN": 13,
-            "LEFT": 14,
-            "RIGHT": 15,
-            "LOGO": 16,
+            0: "A",
+            1: "B",
+            2: "X",
+            3: "Y",
+            4: "LB",
+            5: "RB",
+            6: "LT",
+            7: "RT",
+            8: "BACK",
+            9: "START",
+            10: "LS",
+            11: "RS",
+            12: "UP",
+            13: "DOWN",
+            14: "LEFT",
+            15: "RIGHT",
+            16: "LOGO",
         }
 
         # Set up ports
@@ -100,3 +101,7 @@ class GamepadController(LeafSystem):
             return np.array([0, 0])
         over = (m - self.deadzone) / (1 - self.deadzone)
         return stick * over / m
+
+    def get_button_values(self):
+        gamepad = self.meshcat.GetGamepad().button_values
+        return {self.button_index[i]: gamepad[i] for i in range(len(gamepad))}

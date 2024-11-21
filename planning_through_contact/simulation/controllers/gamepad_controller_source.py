@@ -46,3 +46,6 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
         )
 
         builder.BuildInto(self)
+
+    def get_button_values(self):
+        return self._gamepad_controller.get_button_values()

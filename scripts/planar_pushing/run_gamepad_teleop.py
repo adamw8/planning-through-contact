@@ -76,17 +76,35 @@ def simulate_environment(
     end_time: float,
     recording_file: Optional[str] = None,
 ):
+    prev_button_values = environment.get_button_values()
     time_step = environment._sim_config.time_step * 100
     environment.visualize_desired_slider_pose()
     t = time_step
     while t < end_time:
         environment._simulator.AdvanceTo(t)
 
+        # Get pressed buttons
+        button_values = environment.get_button_values()
+        pressed_buttons = get_pressed_buttons(prev_button_values, button_values)
+
         # Print every 5 seconds
         if t % 5 == 0:
             print(f"Simulation Time: {t}s")
+
+        # Loop updates
         t += time_step
         t = round(t / time_step) * time_step
+        prev_button_values = button_values
+
+
+def get_pressed_buttons(prev_button_values, button_values):
+    pressed_buttons = {}
+    for button, value in button_values.items():
+        if value and not prev_button_values[button]:
+            pressed_buttons[button] = True
+        else:
+            pressed_buttons[button] = False
+    return pressed_buttons
 
 
 if __name__ == "__main__":
