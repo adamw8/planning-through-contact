@@ -43,6 +43,7 @@ from planning_through_contact.simulation.systems.joint_velocity_clamp import (
 from planning_through_contact.simulation.systems.planar_translation_to_rigid_transform_system import (
     PlanarTranslationToRigidTransformSystem,
 )
+from planning_through_contact.simulation.systems.run_flag_system import RunFlagSystem
 
 from .robot_system_base import RobotSystemBase
 
@@ -207,6 +208,7 @@ class IiwaHardwareStation(RobotSystemBase):
 
         # Switch for switching between planner output (for GoPushStart), and diff IK output (for pushing)
         switch = builder.AddNamedSystem("switch", PortSwitch(robot.num_positions()))
+        run_flag_system = builder.AddSystem(RunFlagSystem(true_port_index=2))
 
         if isinstance(driver_config, IiwaDriver):
             # Iiwa state estimated multiplexer
@@ -328,6 +330,10 @@ class IiwaHardwareStation(RobotSystemBase):
             self._planner.GetOutputPort("control_mode"),
             switch.get_port_selector_input_port(),
         )
+        builder.Connect(
+            self._planner.GetOutputPort("control_mode"),
+            run_flag_system.get_input_port(),
+        )
 
         ## Export inputs and outputs
         builder.ExportInput(
@@ -337,6 +343,10 @@ class IiwaHardwareStation(RobotSystemBase):
         builder.ExportOutput(
             joint_velocity_clamp.get_output_port(),
             "iiwa_position_command",
+        )
+        builder.ExportOutput(
+            run_flag_system.get_output_port(),
+            "run_flag",
         )
 
         if isinstance(driver_config, JointStiffnessDriver):
