@@ -74,7 +74,7 @@ camera_configs:
       b: 0.27
       a: 1.0
     show_rgb: false
-    randomize: true
+    randomize: false
   - name: 'wrist_camera'
     parent_frame: 'iiwa_link_7'
     orientation:
@@ -99,7 +99,7 @@ camera_configs:
       a: 1.0
     show_rgb: false
     randomize: false
-domain_randomization_color_range: 0.025
+domain_randomization_color_range: 0.0
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig
