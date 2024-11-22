@@ -139,11 +139,6 @@ class PlanarPushingSimConfig:
     slider_start_pose: PlanarPose = field(
         default_factory=lambda: PlanarPose(x=0.0, y=0.5, theta=0.0)
     )
-    default_joint_positions: npt.NDArray[np.float64] = field(
-        default_factory=lambda: np.array(
-            [0.666, 1.039, -0.7714, -2.0497, 1.3031, 0.6729, -1.0252]
-        )
-    )
     time_step: float = 1e-3
     closed_loop: bool = True
     draw_frames: bool = False
@@ -162,6 +157,7 @@ class PlanarPushingSimConfig:
     )
     multi_run_config: MultiRunConfig = None
     slider_physical_properties: PhysicalProperties = None
+    arbitrary_shape_pickle_path: str = ""
     arbitrary_shape_rgba: np.ndarray = np.array([0.0, 0.0, 0.0, 1.0])
 
     @classmethod
@@ -220,6 +216,7 @@ class PlanarPushingSimConfig:
             log_dir=cfg.log_dir,
             domain_randomization_color_range=cfg.domain_randomization_color_range,
             slider_physical_properties=slider_physical_properties,
+            arbitrary_shape_pickle_path=cfg.arbitrary_shape_pickle_path,
             arbitrary_shape_rgba=np.array(cfg.arbitrary_shape_rgba),
         )
 
@@ -339,6 +336,7 @@ class PlanarPushingSimConfig:
             and self.multi_run_config == other.multi_run_config
             and self.domain_randomization_color_range
             == other.domain_randomization_color_range
+            and self.arbitrary_shape_pickle_path == other.arbitrary_shape_pickle_path
             and np.allclose(self.arbitrary_shape_rgba, other.arbitrary_shape_rgba)
             and self.slider_physical_properties == other.slider_physical_properties
         )

@@ -27,7 +27,6 @@ class GamepadController(LeafSystem):
         self.gamepad_orientation = gamepad_orientation
 
         self.init_xy = None
-        self.prev_button_values = [0.0 for _ in range(17)]
 
         self.button_index = {
             0: "A",
@@ -73,15 +72,12 @@ class GamepadController(LeafSystem):
         pusher_pose: RigidTransform = self.pusher_pose_measured.Eval(context)  # type: ignore
         run_flag = round(self.run_flag_port.Eval(context)[0])
         curr_xy = PlanarPose.from_pose(pusher_pose).pos().reshape(2)
-
+        xy_offset = self.get_xy_offset()
         if self.init_xy is None and run_flag == 1:
             self.init_xy = curr_xy
         elif self.init_xy is None:
             output.SetFromVector([0.0, 0.0])
             return
-
-        # Get offset from gamepad
-        xy_offset = self.get_xy_offset()
 
         # Compute and set target pose
         target_xy = self.init_xy + xy_offset
@@ -105,3 +101,6 @@ class GamepadController(LeafSystem):
     def get_button_values(self):
         gamepad = self.meshcat.GetGamepad().button_values
         return {self.button_index[i]: gamepad[i] for i in range(len(gamepad))}
+
+    def reset(self, reset_xy=None):
+        self.init_xy = reset_xy

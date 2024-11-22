@@ -204,12 +204,20 @@ class SimulatedRealTableEnvironment:
         self._plant.SetPositions(self.mbp_context, self._slider, q)
         self._plant.SetVelocities(self.mbp_context, self._slider, np.zeros(6))
 
-    # TODO: fix this function (need to solve IK)
-    def set_pusher_planar_pose(self, pose: PlanarPose):
-        q_v = np.array([pose.x, pose.y, 0.0, 0.0])
-        self._plant.SetPositionsAndVelocities(
-            self.mbp_context, self._robot_model_instance, q_v
-        )
+    def set_robot_position(self, q: np.ndarray):
+        v = np.zeros(self._plant.num_velocities(self._robot_model_instance))
+        self._plant.SetPositions(self.mbp_context, self._robot_model_instance, q)
+        self._plant.SetVelocities(self.mbp_context, self._robot_model_instance, v)
+
+    def reset(
+        self,
+        robot_position: np.ndarray,
+        slider_pose: PlanarPose,
+        pusher_pose: PlanarPose,
+    ):
+        self.set_robot_position(robot_position)
+        self.set_slider_planar_pose(slider_pose)
+        self._desired_position_source.reset(np.array([pusher_pose.x, pusher_pose.y]))
 
     def visualize_desired_slider_pose(self, time_in_recording: float = 0.0):
         if len(self._goal_geometries) == 0:

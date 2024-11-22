@@ -14,6 +14,7 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
     def __init__(
         self,
         meshcat,
+        # TODO: move these to the config file
         # translation_scale: float,
         # deadzone: float,
         # gamepad_orientation: np.ndarray,
@@ -49,3 +50,6 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
 
     def get_button_values(self):
         return self._gamepad_controller.get_button_values()
+
+    def reset(self, reset_xy=None):
+        self._gamepad_controller.reset(reset_xy=None)
