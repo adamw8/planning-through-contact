@@ -153,16 +153,6 @@ class GamepadDataCollection:
                 self.fsm_state, pressed_buttons, t, self.traj_start_time
             )
 
-            if t % 1 == 0:
-                print(
-                    self.environment._plant.GetPositions(self.environment.mbp_context)[
-                        :7
-                    ]
-                )
-                print(
-                    self.environment._desired_position_source._gamepad_controller.init_xy
-                )
-
             # Loop updates
             t += time_step
             t = round(t / time_step) * time_step
