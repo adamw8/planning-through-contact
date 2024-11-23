@@ -14,10 +14,9 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
     def __init__(
         self,
         meshcat,
-        # TODO: move these to the config file
-        # translation_scale: float,
-        # deadzone: float,
-        # gamepad_orientation: np.ndarray,
+        translation_scale: float,
+        deadzone: float,
+        gamepad_orientation: np.ndarray,
     ):
         super().__init__()
 
@@ -28,9 +27,9 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
             "GamepadController",
             GamepadController(
                 meshcat=meshcat,
-                translation_scale=0.0001,
-                deadzone=0.05,
-                gamepad_orientation=np.array([[1, 0], [0, -1]]),
+                translation_scale=translation_scale,
+                deadzone=deadzone,
+                gamepad_orientation=gamepad_orientation,
             ),
         )
 

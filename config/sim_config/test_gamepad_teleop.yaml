@@ -40,6 +40,12 @@ draw_frames: true
 use_realtime: true
 delay_before_execution: 5.0
 save_plots: false
+gamepad:
+  translation_scale: 0.0001
+  deadzone: 0.01
+  gamepad_orientation:
+    - [1, 0]
+    - [0, -1] # requires reflection (not SO(3))
 diffusion_policy_config:
   _target_: planning_through_contact.simulation.controllers.diffusion_policy_source.DiffusionPolicyConfig
   # checkpoint: '/home/adam/workspace/gcs-diffusion/data/outputs/iiwa_multi_camera_test/checkpoints/latest.ckpt'
@@ -137,9 +143,9 @@ data_collection_config:
   convert_to_zarr: true
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   # plans_dir: 'trajectories/cotrain_data_v2'
-  plans_dir: 'trajectories/sim_tee_data/run_0'
-  rendered_plans_dir: 'trajectories_rendered/sim_tee_data'
-  zarr_path: 'trajectories_rendered/sim_tee_data.zarr'
+  plans_dir: ''
+  rendered_plans_dir: 'trajectories_rendered/gamepad_teleop'
+  zarr_path: 'trajectories_rendered/gamepad_teleop.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
   action_chunk_length: 2048

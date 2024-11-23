@@ -5,10 +5,15 @@ from typing import Optional
 
 import numpy as np
 from pydrake.all import (
+    Cylinder,
     Demultiplexer,
     DiagramBuilder,
+    GeometryInstance,
+    ImageWriter,
     LogVectorOutput,
+    MakePhongIllustrationProperties,
     Meshcat,
+    PixelType,
     Rgba,
     Simulator,
 )
@@ -38,6 +43,7 @@ from planning_through_contact.simulation.sim_utils import (
     check_collision,
     create_goal_geometries,
     get_slider_pose_within_workspace,
+    get_slider_shapes,
     slider_within_workspace,
     visualize_desired_slider_pose,
 )
@@ -50,6 +56,7 @@ from planning_through_contact.simulation.systems.rigid_transform_to_planar_pose_
 from planning_through_contact.simulation.systems.robot_state_to_rigid_transform import (
     RobotStateToRigidTransform,
 )
+from planning_through_contact.visualize.colors import COLORS
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +76,7 @@ class SimulatedRealTableEnvironment:
         self._meshcat = station_meshcat
         self._simulator = None
         self._goal_geometries = []
+        self._pusher_goal_geometry = None
 
         self._plant = self._robot_system.get_station_plant()
         self._scene_graph = self._robot_system.get_scene_graph()
@@ -153,7 +161,7 @@ class SimulatedRealTableEnvironment:
             pusher_pose_to_vector.get_input_port(),
         )
         self._pusher_pose_logger = LogVectorOutput(
-            pusher_pose_to_vector.get_output_port(), builder
+            pusher_pose_to_vector.get_output_port(), builder, 0.01
         )
 
         # slider logger
@@ -171,8 +179,34 @@ class SimulatedRealTableEnvironment:
             slider_pose_to_planar_pose.get_input_port(),
         )
         self._slider_pose_logger = LogVectorOutput(
-            slider_pose_to_planar_pose.get_output_port(), builder
+            slider_pose_to_planar_pose.get_output_port(), builder, 0.01
         )
+
+        ## Image writers
+        if isinstance(self._desired_position_source, GamepadControllerSource):
+            # hardcoded path
+            image_writer_dir = "trajectories_rendered/temp"
+            image_writers = []
+            for camera_config in sim_config.camera_configs:
+                os.makedirs(f"{image_writer_dir}/{camera_config.name}", exist_ok=True)
+                image_writers.append(ImageWriter())
+                image_writers[-1].DeclareImageInputPort(
+                    pixel_type=PixelType.kRgba8U,
+                    port_name=f"{camera_config.name}_image",
+                    file_name_format=f"{image_writer_dir}/{camera_config.name}"
+                    + "/{time_msec}.png",
+                    publish_period=0.1,
+                    start_time=0.0,
+                )
+                builder.AddNamedSystem(
+                    f"{camera_config}_image_writer", image_writers[-1]
+                )
+                builder.Connect(
+                    self._robot_system.GetOutputPort(
+                        f"rgbd_sensor_{camera_config.name}"
+                    ),
+                    image_writers[-1].get_input_port(),
+                )
 
         diagram = builder.Build()
         self._diagram = diagram
@@ -185,7 +219,6 @@ class SimulatedRealTableEnvironment:
         self._robot_system.pre_sim_callback(self.context)
         self.mbp_context = self._plant.GetMyContextFromRoot(self.context)
         # initialize slider above the table
-        # TODO: read this in from somewhere
         self.set_slider_planar_pose(PlanarPose(0.587, -0.0355, 0.0))
 
     def export_diagram(self, filename: str):
@@ -233,6 +266,49 @@ class SimulatedRealTableEnvironment:
             time_in_recording=time_in_recording,
         )
 
+    def visualize_desired_pusher_pose(self, time_in_recording: float = 0.0):
+        slider_shapes = get_slider_shapes(self._robot_system)
+        height = min([shape.height() for shape in slider_shapes])
+
+        if self._pusher_goal_geometry is None:
+            color = COLORS["emeraldgreen"].diffuse(0.3)
+            pusher_shape = Cylinder(
+                self._sim_config.dynamics_config.pusher_radius, height
+            )
+            desired_pose = self._sim_config.pusher_start_pose.to_pose(
+                height / 2, z_axis_is_positive=True
+            )
+            source_id = self._robot_system._scene_graph.RegisterSource()
+
+            geom_instance = GeometryInstance(
+                desired_pose,
+                pusher_shape,
+                f"pusher_shape",
+            )
+            shape_geometry_id = (
+                self._robot_system._scene_graph.RegisterAnchoredGeometry(
+                    source_id,
+                    geom_instance,
+                )
+            )
+            self._robot_system._scene_graph.AssignRole(
+                source_id,
+                shape_geometry_id,
+                MakePhongIllustrationProperties(color),
+            )
+            self._pusher_goal_geometry = "pusher_goal_shape"
+            self._robot_system._meshcat.SetObject(
+                self._pusher_goal_geometry, pusher_shape, rgba=Rgba(*color)
+            )
+
+        self._robot_system._meshcat.SetTransform(
+            self._pusher_goal_geometry,
+            self._sim_config.pusher_start_pose.to_pose(
+                height / 2, z_axis_is_positive=True
+            ),
+            time_in_recording,
+        )
+
     def print_distance_to_target_pose(
         self, target_slider_pose: PlanarPose = PlanarPose(0.5, 0.0, 0.0)
     ):
@@ -268,3 +344,9 @@ class SimulatedRealTableEnvironment:
             return self._desired_position_source.get_button_values()
         else:
             raise NotImplementedError
+
+    def get_pusher_pose_log(self):
+        return self._pusher_pose_logger.FindLog(self.context)
+
+    def get_slider_pose_log(self):
+        return self._slider_pose_logger.FindLog(self.context)

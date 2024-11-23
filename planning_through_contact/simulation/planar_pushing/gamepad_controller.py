@@ -12,6 +12,10 @@ from planning_through_contact.geometry.planar.planar_pose import PlanarPose
 np.set_printoptions(precision=4)
 
 
+def print_blue(text):
+    print(f"\033[94m{text}\033[0m")
+
+
 class GamepadController(LeafSystem):
     def __init__(
         self,
@@ -60,12 +64,14 @@ class GamepadController(LeafSystem):
         )
 
         # Wait for gamepad connection
-        print("Gamepad meshcat (must be opened to connect gamepad)")
         self.meshcat = meshcat
-        print("\nPlease connect gamepad.")
+        print_blue("\nPlease connect gamepad.")
+        print_blue("1. Open meshcat (default: http://localhost:7000)")
+        print_blue("2. Press any button on the gamepad.")
+
         while self.meshcat.GetGamepad().index is None:
             continue
-        print("Gamepad connected.")
+        print_blue("\nGamepad connected!\n")
 
     def DoCalcOutput(self, context: Context, output):
         # Read in pose
