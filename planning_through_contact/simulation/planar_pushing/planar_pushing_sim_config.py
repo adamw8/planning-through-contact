@@ -273,7 +273,11 @@ class PlanarPushingSimConfig:
 
                 if "light_direction" in camera_config:
                     # Create renderer and set light direction
+                    from pydrake.geometry import LightParameter, RenderEngineVtkParams
+
                     renderer_params = RenderEngineVtkParams()
+
+                    # Background
                     renderer_params.default_clear_color = np.array(
                         [
                             camera_config.background.r,
@@ -281,16 +285,23 @@ class PlanarPushingSimConfig:
                             camera_config.background.b,
                         ]
                     )
+
+                    # Light direction
                     direction = np.array(camera_config["light_direction"])
                     direction = direction / np.linalg.norm(direction)
                     renderer_params.lights = [LightParameter(direction=direction)]
+
+                    renderer_params.cast_shadows = True
+
                     drake_camera_config = CameraConfig(
                         renderer_name=camera_config.name,
                         renderer_class=renderer_params,
                         **kwargs,
                     )
                 else:
-                    drake_camera_config = CameraConfig(**kwargs)
+                    drake_camera_config = CameraConfig(
+                        **kwargs,
+                    )
 
                 if camera_config.randomize:
                     drake_camera_config = randomize_camera_config(drake_camera_config)
