@@ -9,7 +9,7 @@ dynamics_config:
   force_scale: 0.01
 slider_type: 'arbitrary'
 arbitrary_shape_pickle_path: arbitrary_shape_pickles/small_t_pusher.pkl
-arbitrary_shape_rgba: [0.1, 0.1, 0.1, 1.0]
+arbitrary_shape_rgba: [0.15, 0.15, 0.15, 1.0]
 arbitrary_shape_visual_mesh_path: null # Can be null (collision mesh will be used)
 physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
@@ -63,11 +63,11 @@ use_hardware: false
 pusher_z_offset: 0.0125
 camera_configs:
   - name: 'overhead_camera'
-    orientation:
-      roll: -2.5563905364353046
-      pitch: -0.035024118674409785
+    orientation: # slghtly different
+      roll: -2.55
+      pitch: -0.035
       yaw: 1.5462387054402587
-    position: [0.91099349, -0.07440916, 0.45068324]
+    position: [0.91, -0.075, 0.45] # slightly different
     width: 640
     height: 480
     center_x: 318.05
@@ -75,11 +75,12 @@ camera_configs:
     focal_x: 616.704
     focal_y: 616.777
     background:
-      r: 0.47
-      g: 0.39
-      b: 0.27
+      r: 0.55
+      g: 0.45
+      b: 0.35
       a: 1.0
     light_direction: [0, 0, 1]
+    cast_shadows: true
     show_rgb: false
     randomize: false
   - name: 'wrist_camera'
@@ -98,7 +99,8 @@ camera_configs:
     center_y: 244.107
     focal_x: 616.704
     focal_y: 616.777
-    light_direction: [0.25, 1.0, 1.75]
+    light_direction: [0.25, -1.0, 1.75]
+    cast_shadows: false
     background:
       r: 0.47
       g: 0.39

@@ -163,7 +163,7 @@ class GamepadDataCollection:
             shutil.rmtree("trajectories_rendered/temp")
 
     def fsm_logic(self, fsm_state, pressed_buttons, curr_time, traj_start_time):
-        pressed_A = pressed_buttons["A"]
+        pressed_A = pressed_buttons["A"]  # Start/Save trajectory
         pressed_B = pressed_buttons["B"]  # Reset environment
         pressed_X = pressed_buttons["X"]  # Terminate
 

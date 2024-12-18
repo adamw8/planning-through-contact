@@ -271,27 +271,35 @@ class PlanarPushingSimConfig:
                     ):
                         kwargs[key] = camera_config[key]
 
-                if "light_direction" in camera_config:
+                if (
+                    "light_direction" in camera_config
+                    or "cast_shadows" in camera_config
+                ):
                     # Create renderer and set light direction
                     from pydrake.geometry import LightParameter, RenderEngineVtkParams
 
                     renderer_params = RenderEngineVtkParams()
 
                     # Background
-                    renderer_params.default_clear_color = np.array(
-                        [
-                            camera_config.background.r,
-                            camera_config.background.g,
-                            camera_config.background.b,
-                        ]
-                    )
+                    if "background" in camera_config:
+                        renderer_params.default_clear_color = np.array(
+                            [
+                                camera_config.background.r,
+                                camera_config.background.g,
+                                camera_config.background.b,
+                            ]
+                        )
 
                     # Light direction
-                    direction = np.array(camera_config["light_direction"])
-                    direction = direction / np.linalg.norm(direction)
-                    renderer_params.lights = [LightParameter(direction=direction)]
+                    if "light_direction" in camera_config:
+                        direction = np.array(camera_config["light_direction"])
+                        direction = direction / np.linalg.norm(direction)
+                        renderer_params.lights = [LightParameter(direction=direction)]
 
-                    renderer_params.cast_shadows = True
+                    # Shadows
+                    if "cast_shadows" in camera_config and camera_config.cast_shadows:
+                        renderer_params.cast_shadows = True
+                        renderer_params.shadow_map_size = 512
 
                     drake_camera_config = CameraConfig(
                         renderer_name=camera_config.name,
