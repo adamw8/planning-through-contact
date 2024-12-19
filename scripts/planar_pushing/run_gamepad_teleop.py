@@ -127,6 +127,9 @@ class GamepadDataCollection:
     ):
         # Loop variables
         prev_button_values = self.environment.get_button_values()
+        translation_scale = (
+            self.environment._desired_position_source.get_translation_scale()
+        )
         time_step = self.sim_config.time_step * 10
         t = time_step
         validated_image_writer = False
@@ -152,6 +155,15 @@ class GamepadDataCollection:
             self.fsm_state, self.traj_start_time = self.fsm_logic(
                 self.fsm_state, pressed_buttons, t, self.traj_start_time
             )
+
+            if button_values["RT"]:
+                self.environment._desired_position_source.set_translation_scale(
+                    0.5 * translation_scale
+                )
+            else:
+                self.environment._desired_position_source.set_translation_scale(
+                    translation_scale
+                )
 
             # Loop updates
             t += time_step
