@@ -36,6 +36,7 @@ manipulation = "2024.3.28"
 pyvirtualdisplay = "^3.0"
 scipy = "^1.13.0"
 wandb = "^0.17.0"
+huggingface-hub = ">=0.10.0,<0.25.3"
 
 [tool.poetry.dev-dependencies]
 
