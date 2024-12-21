@@ -45,20 +45,33 @@ from planning_through_contact.visualize.analysis import (
 )
 
 
+class FailureMode(Enum):
+    NONE = "none"
+    SLIDER_FELL_OFF_TABLE = "slider fell"
+    TIMEOUT = "timeout"
+    ELBOW_DOWN = "elbow down"
+
+
 class SimSimEval:
-    def __init__(self, cfg: OmegaConf):
+    def __init__(self, cfg: OmegaConf, output_dir=None):
         # start meshcat
         print(f"Station meshcat")
         station_meshcat = StartMeshcat()
 
+        if cfg.use_realtime:
+            print_blue("Setting use_realtime to False for faster eval")
+            cfg.use_realtime = False
+
         # load sim_config
         self.cfg = cfg
+        self.output_dir = output_dir
         self.sim_config = PlanarPushingSimConfig.from_yaml(cfg)
         self.multi_run_config = self.sim_config.multi_run_config
         self.pusher_start_pose = self.sim_config.pusher_start_pose
         self.slider_goal_pose = self.sim_config.slider_goal_pose
         print(f"Initial pusher pose: {self.pusher_start_pose}")
         print(f"Target slider pose: {self.slider_goal_pose}")
+        assert self.sim_config.use_realtime == False
 
         # Set up random seeds
         random.seed(self.multi_run_config.seed)
@@ -128,32 +141,54 @@ class SimSimEval:
         last_reset_time = t
         num_successful_trials = 0
         num_completed_trials = 0
+        meshcat = self.environment._meshcat
+        summary = {
+            "successful_trials": [],
+            "trial_times": [],
+            "final_error": [],
+            "trial_result": [],
+        }
 
         # Simulate
+        meshcat.StartRecording()
         self.environment.visualize_desired_slider_pose()
         self.environment.visualize_desired_pusher_pose()
         while t < end_time:
             self.environment._simulator.AdvanceTo(t)
 
+            # Check for failure
             reset_environment = False
             success = False
-
-            # Check for failure
             if self.check_success():
                 success = True
                 reset_environment = True
+                num_successful_trials += 1
+                summary["successful_trials"].append(num_completed_trials)
+                summary["trial_result"].append("success")
+                summary["trial_times"].append(
+                    self.get_trial_duration(t, last_reset_time)
+                )
             # Check for failure
-            elif self.check_failure(t, last_reset_time):
-                reset_environment = True
+            else:
+                failure, mode = self.check_failure(t, last_reset_time)
+                if failure:
+                    reset_environment = True
+                    summary["trial_result"].append(mode.value)
+                    if mode == FailureMode.TIMEOUT:
+                        summary["trial_times"].append(
+                            self.multi_run_config.max_attempt_duration
+                        )
 
             # Reset environment
             if reset_environment:
+                # Log final error
+                final_error = self.get_final_error()
+                summary["final_error"].append(final_error)
+
+                # Reset environment
                 self.reset_environment()
                 last_reset_time = t
                 num_completed_trials += 1
-
-                if success:
-                    num_successful_trials += 1
 
             # Finished Eval
             if num_completed_trials >= self.multi_run_config.num_runs:
@@ -163,7 +198,11 @@ class SimSimEval:
             t += time_step
             t = round(t / time_step) * time_step
 
-        # save the logs somewhere
+        # Save logs
+        self.environment.save_recording("eval.html", self.output_dir)
+        self.save_summary(summary)
+
+        # TODO save logs
 
     def check_success(self):
         if self.success_criteria == "tolerance":
@@ -220,21 +259,39 @@ class SimSimEval:
 
     def check_failure(self, t, last_reset_time):
         # Check timeout
-        duration = t - last_reset_time
+        duration = self.get_trial_duration(t, last_reset_time)
         if duration > self.multi_run_config.max_attempt_duration:
-            return True
+            return True, FailureMode.TIMEOUT
 
         # Check if slider is on table
-        z_value = self.plant.GetPositions(self.mbp_context, self.slider_model_instance)[
-            -1
-        ]
-        if z_value < 0.0:
-            return True
+        slider_pose = self.plant.GetPositions(
+            self.mbp_context, self.slider_model_instance
+        )
+        if slider_pose[-1] < 0.0:  # z value
+            return True, FailureMode.SLIDER_FELL_OFF_TABLE
+
+        # TODO: check elbow down
+        elbow_down = False
+        if elbow_down:
+            return True, FailureMode.ELBOW_DOWN
 
         # No immediate failures
-        return False
+        return False, FailureMode.NONE
 
-    # TODO: write reset function for diffusion policy
+    def get_trial_duration(self, t, last_reset_time):
+        return t - last_reset_time - self.sim_config.delay_before_execution
+
+    def get_final_error(self):
+        pusher_pose = self.get_pusher_pose()
+        pusher_goal_pose = self.sim_config.pusher_start_pose
+        pusher_error = pusher_goal_pose.vector() - pusher_pose.vector()
+
+        slider_pose = self.get_slider_pose()
+        slider_goal_pose = self.sim_config.slider_goal_pose
+        slider_error = slider_goal_pose.vector() - slider_pose.vector()
+
+        return {"pusher_error": pusher_error[:2], "slider_error": slider_error}
+
     def reset_environment(self):
         seed = int(1e6 * time.time() % 1e6)
         np.random.seed(seed)
@@ -298,24 +355,68 @@ class SimSimEval:
         A, b = polyhedron.A(), polyhedron.b()
         return np.all(A @ point <= b)
 
+    # Logging infrastructure
+    def save_summary(self, summary):
+        summary_path = os.path.join(self.output_dir, "summary.pkl")
+        with open(summary_path, "wb") as f:
+            pickle.dump(summary, f)
+
+        # write summary to summary.txt
+        with open(os.path.join(self.output_dir, "summary.txt"), "w") as f:
+            f.write("Evaluation Summary\n")
+            f.write("====================================\n")
+            f.write("Units: seconds, meters, degrees\n\n")
+            f.write(f"Total trials: {self.multi_run_config.num_runs}\n")
+            f.write(f"Total successful trials: {len(summary['successful_trials'])}\n")
+            f.write(
+                f"Success rate: {len(summary['successful_trials']) / self.multi_run_config.num_runs:.6f}\n\n"
+            )
+            f.write(f"Success criteria: {self.success_criteria}\n")
+            if self.success_criteria == "tolerance":
+                f.write(f"Translation tolerance: {self.multi_run_config.trans_tol}\n")
+                f.write(f"Rotation tolerance: {self.multi_run_config.rot_tol}\n")
+                f.write(
+                    f"Evaluate final slider rotation: {self.multi_run_config.evaluate_final_slider_rotation}\n"
+                )
+                f.write(
+                    f"Evaluate final pusher position: {self.multi_run_config.evaluate_final_pusher_position}\n"
+                )
+            f.write(
+                f"Max attempt duration: {self.multi_run_config.max_attempt_duration}\n\n"
+            )
+            f.write("====================================\n\n")
+
+            for trial_idx, result in enumerate(summary["trial_result"]):
+                f.write(f"Trial {trial_idx + 1}\n")
+                f.write("--------------------\n")
+                f.write(f"Result: {result}\n")
+                f.write(f"Trial time: {summary['trial_times'][trial_idx]:.2f}\n")
+                f.write(
+                    f"Final puser error: {summary['final_error'][trial_idx]['pusher_error']}\n"
+                )
+                f.write(
+                    f"Final slider error: {summary['final_error'][trial_idx]['slider_error']}\n"
+                )
+                f.write("\n")
+
 
 def print_blue(text):
     print(f"\033[94m{text}\033[0m")
 
 
-# TODO: rewrite the main function
 @hydra.main(
     version_base=None,
     config_path=str(pathlib.Path(__file__).parents[2].joinpath("config", "sim_config")),
 )
 def main(cfg: OmegaConf):
-    sim_sim_eval = SimSimEval(cfg)
+    output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    sim_sim_eval = SimSimEval(cfg, output_dir)
     sim_sim_eval.simulate_environment(float("inf"))
 
 
 if __name__ == "__main__":
     """
     Configure sim config through hydra yaml file
-    Ex: python scripts/diffusion_policy/planar_pushing/run_gamepad_teleop.py --config-dir <dir> --config-name <file>
+    Ex: python scripts/diffusion_policy/planar_pushing/run_sim_sim_eval.py --config-dir <dir> --config-name <file>
     """
     main()
