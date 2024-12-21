@@ -52,6 +52,9 @@ class FSMState(Enum):
 
 class GamepadDataCollection:
     def __init__(self, cfg: OmegaConf):
+        seed = int(1e6 * time.time() % 1e6)
+        np.random.seed(seed)
+
         # start meshcat
         print(f"Station meshcat")
         station_meshcat = StartMeshcat()
@@ -204,8 +207,6 @@ class GamepadDataCollection:
         return fsm_state, traj_start_time
 
     def reset_environment(self):
-        seed = int(1e6 * time.time() % 1e6)
-        np.random.seed(seed)
         slider_geometry = self.sim_config.dynamics_config.slider.geometry
         slider_pose = get_slider_pose_within_workspace(
             self.workspace, slider_geometry, self.pusher_start_pose, self.plan_config

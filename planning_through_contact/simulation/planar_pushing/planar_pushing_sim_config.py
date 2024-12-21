@@ -58,6 +58,7 @@ class MultiRunConfig:
         success_criteria: str = "tolerance",
         dataset_path: str = None,
         slider_physical_properties: PhysicalProperties = None,
+        pre_compute_initial_conditions: bool = True,
     ):
         # Set up multi run config
         config = get_default_plan_config(
@@ -81,14 +82,16 @@ class MultiRunConfig:
                 buffer=0,
             ),
         )
-        self.initial_slider_poses = get_slider_start_poses(
-            seed=seed,
-            num_plans=num_runs,
-            workspace=workspace,
-            config=config,
-            pusher_pose=pusher_start_pose,
-            limit_rotations=False,
-        )
+
+        if pre_compute_initial_conditions:
+            self.initial_slider_poses = get_slider_start_poses(
+                seed=seed,
+                num_plans=num_runs,
+                workspace=workspace,
+                config=config,
+                pusher_pose=pusher_start_pose,
+                limit_rotations=False,
+            )
         self.workspace = workspace
         self.num_runs = num_runs
         self.seed = seed
@@ -130,6 +133,8 @@ class MultiRunConfig:
             == other.evaluate_final_slider_rotation
             and self.success_criteria == other.success_criteria
             and self.dataset_path == other.dataset_path
+            and self.pre_compute_initial_conditions
+            == other.pre_compute_initial_conditions
         )
 
 
