@@ -153,7 +153,7 @@ class SimSimEval:
         }
 
         # Simulate
-        meshcat.StartRecording()
+        meshcat.StartRecording(frames_per_second=10)
         self.environment.visualize_desired_slider_pose()
         self.environment.visualize_desired_pusher_pose()
         while t < end_time:
@@ -209,11 +209,14 @@ class SimSimEval:
             # Loop updates
             t += time_step
             t = round(t / time_step) * time_step
+        summary["total_eval_time"] = t
 
         # Save logs
-        self.environment.save_recording("eval.html", self.output_dir)
+        if self.multi_run_config.save_recording:
+            self.environment.save_recording("eval.html", self.output_dir)
         self.save_summary(summary)
         self.print_summary(os.path.join(self.output_dir, "summary.txt"))
+        # TODO: log actual data
 
     def check_success(self):
         if self.success_criteria == "tolerance":
@@ -382,8 +385,9 @@ class SimSimEval:
             f.write(f"Total trials: {self.multi_run_config.num_runs}\n")
             f.write(f"Total successful trials: {len(summary['successful_trials'])}\n")
             f.write(
-                f"Success rate: {len(summary['successful_trials']) / self.multi_run_config.num_runs:.6f}\n\n"
+                f"Success rate: {len(summary['successful_trials']) / self.multi_run_config.num_runs:.6f}\n"
             )
+            f.write(f"Total evaluation time: {summary['total_eval_time']:.2f}\n\n")
             f.write(f"Success criteria: {self.success_criteria}\n")
             if self.success_criteria == "tolerance":
                 f.write(f"Translation tolerance: {self.multi_run_config.trans_tol}\n")

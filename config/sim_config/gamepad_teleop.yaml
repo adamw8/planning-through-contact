@@ -128,6 +128,7 @@ multi_run_config:
   dataset_path: /home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data.zarr
   slider_physical_properties: ${physical_properties}
   pre_compute_initial_conditions: false
+  save_recording: true
 
 ## Robot specific configs
 # sim_config

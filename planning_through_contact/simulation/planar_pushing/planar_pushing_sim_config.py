@@ -59,6 +59,7 @@ class MultiRunConfig:
         dataset_path: str = None,
         slider_physical_properties: PhysicalProperties = None,
         pre_compute_initial_conditions: bool = True,
+        save_recording: bool = True,
     ):
         # Set up multi run config
         config = get_default_plan_config(
@@ -103,6 +104,7 @@ class MultiRunConfig:
         self.evaluate_final_slider_rotation = evaluate_final_slider_rotation
         self.success_criteria = success_criteria
         self.dataset_path = dataset_path
+        self.save_recording = save_recording
 
     def __str__(self):
         slider_pose_str = f"initial_slider_poses: {self.initial_slider_poses}"
@@ -135,6 +137,7 @@ class MultiRunConfig:
             and self.dataset_path == other.dataset_path
             and self.pre_compute_initial_conditions
             == other.pre_compute_initial_conditions
+            and self.save_recording == other.save_recording
         )
 
 
