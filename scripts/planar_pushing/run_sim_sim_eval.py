@@ -118,6 +118,7 @@ class SimSimEval:
         self.plant = self.environment._plant
         self.mbp_context = self.environment.mbp_context
         self.pusher_body = self.plant.GetBodyByName("pusher")
+        self.robot_model_instance = self.environment._robot_model_instance
         self.slider_model_instance = self.environment._slider_model_instance
 
         # Success_criteria
@@ -141,10 +142,12 @@ class SimSimEval:
         last_reset_time = t
         num_successful_trials = 0
         num_completed_trials = 0
+        logged_initial_conditions = False
         meshcat = self.environment._meshcat
         summary = {
             "successful_trials": [],
             "trial_times": [],
+            "initial_conditions": [],
             "final_error": [],
             "trial_result": [],
         }
@@ -155,6 +158,14 @@ class SimSimEval:
         self.environment.visualize_desired_pusher_pose()
         while t < end_time:
             self.environment._simulator.AdvanceTo(t)
+
+            # Log initial conditions
+            if (
+                t - last_reset_time > self.sim_config.delay_before_execution
+                and not logged_initial_conditions
+            ):
+                summary["initial_conditions"].append(self.get_slider_pose().vector())
+                logged_initial_conditions = True
 
             # Check for failure
             reset_environment = False
@@ -189,6 +200,7 @@ class SimSimEval:
                 self.reset_environment()
                 last_reset_time = t
                 num_completed_trials += 1
+                logged_initial_conditions = False
 
             # Finished Eval
             if num_completed_trials >= self.multi_run_config.num_runs:
@@ -201,8 +213,7 @@ class SimSimEval:
         # Save logs
         self.environment.save_recording("eval.html", self.output_dir)
         self.save_summary(summary)
-
-        # TODO save logs
+        self.print_summary(os.path.join(self.output_dir, "summary.txt"))
 
     def check_success(self):
         if self.success_criteria == "tolerance":
@@ -270,9 +281,10 @@ class SimSimEval:
         if slider_pose[-1] < 0.0:  # z value
             return True, FailureMode.SLIDER_FELL_OFF_TABLE
 
-        # TODO: check elbow down
-        elbow_down = False
-        if elbow_down:
+        ELBOW_INDEX = 3
+        ELBOW_THRESHOLD = 5 * np.pi / 180
+        elbow_angle = self.get_robot_joint_angles()[ELBOW_INDEX]
+        if elbow_angle > ELBOW_THRESHOLD:
             return True, FailureMode.ELBOW_DOWN
 
         # No immediate failures
@@ -335,6 +347,9 @@ class SimSimEval:
         )
         return PlanarPose.from_generalized_coords(slider_pose)
 
+    def get_robot_joint_angles(self):
+        return self.plant.GetPositions(self.mbp_context, self.robot_model_instance)
+
     def get_pusher_goal_polyhedron(self, dataset_path):
         root = zarr.open(dataset_path, mode="r")
         indices = np.array(root["meta/episode_ends"]) - 1
@@ -382,6 +397,8 @@ class SimSimEval:
             f.write(
                 f"Max attempt duration: {self.multi_run_config.max_attempt_duration}\n\n"
             )
+            f.write(f"Workspace width: {self.cfg.multi_run_config.workspace_width}\n")
+            f.write(f"Workspace height: {self.cfg.multi_run_config.workspace_height}\n")
             f.write("====================================\n\n")
 
             for trial_idx, result in enumerate(summary["trial_result"]):
@@ -390,6 +407,9 @@ class SimSimEval:
                 f.write(f"Result: {result}\n")
                 f.write(f"Trial time: {summary['trial_times'][trial_idx]:.2f}\n")
                 f.write(
+                    f"Initial slider pose: {summary['initial_conditions'][trial_idx]}\n"
+                )
+                f.write(
                     f"Final puser error: {summary['final_error'][trial_idx]['pusher_error']}\n"
                 )
                 f.write(
@@ -397,9 +417,14 @@ class SimSimEval:
                 )
                 f.write("\n")
 
+    def print_summary(self, summary_path):
+        with open(summary_path, "r") as file:
+            for line in file:
+                print_blue(line, end="")
 
-def print_blue(text):
-    print(f"\033[94m{text}\033[0m")
+
+def print_blue(text, end="\n"):
+    print(f"\033[94m{text}\033[0m", end=end)
 
 
 @hydra.main(

@@ -351,7 +351,7 @@ class GamepadDataCollection:
 
 
 def print_blue(text):
-    print(f"\033[94m{text}\033[0m")
+    print(f"\033[94m{text}\033[0m", end=end)
 
 
 @hydra.main(
