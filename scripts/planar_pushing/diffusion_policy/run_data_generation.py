@@ -593,6 +593,16 @@ def convert_to_zarr(
             start_time = math.ceil(t[start_idx] * freq) / freq
             del pusher_desired
 
+            # Get timestamp of initial image
+            image_dir = traj_dir.joinpath(camera_name)
+            timestamps = [
+                int(f.split(".")[0])
+                for f in os.listdir(image_dir)
+                if f.endswith(".png")
+            ]
+            first_image_time = min(timestamps) / 1000
+            assert first_image_time >= 0.0
+
             # get state, action, images
             current_time = start_time
             idx = start_idx
@@ -601,7 +611,10 @@ def convert_to_zarr(
                 idx = _get_closest_index(t, current_time, idx)
 
                 # Image names are "{time in ms}" rounded to the nearest 100th
-                image_name = round((current_time * 1000) / 100) * 100
+                image_name = (
+                    round(((current_time - first_image_time) * 1000) / 100) * 100
+                    + first_image_time * 1000
+                )
                 image_path = traj_dir.joinpath(camera_name, f"{int(image_name)}.png")
                 img = Image.open(image_path).convert("RGB")
                 img = np.asarray(img)

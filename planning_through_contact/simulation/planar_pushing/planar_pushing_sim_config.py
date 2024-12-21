@@ -87,6 +87,7 @@ class MultiRunConfig:
             pusher_pose=pusher_start_pose,
             limit_rotations=False,
         )
+        self.workspace = workspace
         self.num_runs = num_runs
         self.seed = seed
         self.target_slider_poses = [slider_goal_pose] * num_runs

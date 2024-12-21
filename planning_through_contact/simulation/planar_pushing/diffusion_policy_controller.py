@@ -116,6 +116,10 @@ class DiffusionPolicyController(LeafSystem):
             for name in self.camera_port_dict.keys()
         }
 
+        # Reset
+        self._last_reset_time = 0.0
+        self._received_reset_signal = True
+
         # Logging data structures
         self._save_logs = save_logs
         if self._save_logs:
@@ -151,9 +155,12 @@ class DiffusionPolicyController(LeafSystem):
 
     def DoCalcOutput(self, context: Context, output):
         time = context.get_time()
+        if self._received_reset_signal:
+            self._last_reset_time = time
+            self._received_reset_signal = False
 
         # Continually update ports until delay is over
-        if time < self._delay:
+        if time < self._last_reset_time + self._delay:
             self._update_history(context)
             output.set_value(self._current_action)
             return
@@ -236,6 +243,7 @@ class DiffusionPolicyController(LeafSystem):
         self._pusher_pose_deque.clear()
         for image_deque in self._image_deque_dict.values():
             image_deque.clear()
+        self._received_reset_signal = True
 
     def _deque_to_dict(
         self, obs_deque: deque, image_deque_dict: dict, target: np.ndarray

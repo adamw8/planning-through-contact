@@ -137,6 +137,13 @@ class SimulatedRealTableEnvironment:
                     ),
                     self._desired_position_source.GetInputPort(camera_config.name),
                 )
+            if self._desired_position_source.HasInputPort(camera_config.name):
+                builder.Connect(
+                    self._robot_system.GetOutputPort(
+                        f"rgbd_sensor_{camera_config.name}"
+                    ),
+                    self._desired_position_source.GetInputPort(camera_config.name),
+                )
         if self._desired_position_source.HasInputPort("run_flag"):
             builder.Connect(
                 self._robot_system.GetOutputPort("run_flag"),
