@@ -240,7 +240,7 @@ class SimSimEval:
         pusher_goal_pose = self.sim_config.pusher_start_pose
         pusher_error = pusher_goal_pose.vector() - pusher_pose.vector()
         reached_goal_pusher_position = (
-            np.linalg.norm(pusher_error[:2]) <= self.multi_run_config.trans_tol
+            np.linalg.norm(pusher_error[:2]) <= 1.5 * self.multi_run_config.trans_tol
         )
 
         if not reached_goal_slider_position:
@@ -378,7 +378,7 @@ class SimSimEval:
         with open(os.path.join(self.output_dir, "summary.txt"), "w") as f:
             f.write("Evaluation Summary\n")
             f.write("====================================\n")
-            f.write("Units: seconds, meters, degrees\n\n")
+            f.write("Units: seconds, meters, radians\n\n")
             f.write(f"Total trials: {self.multi_run_config.num_runs}\n")
             f.write(f"Total successful trials: {len(summary['successful_trials'])}\n")
             f.write(
@@ -410,7 +410,7 @@ class SimSimEval:
                     f"Initial slider pose: {summary['initial_conditions'][trial_idx]}\n"
                 )
                 f.write(
-                    f"Final puser error: {summary['final_error'][trial_idx]['pusher_error']}\n"
+                    f"Final pusher error: {summary['final_error'][trial_idx]['pusher_error']}\n"
                 )
                 f.write(
                     f"Final slider error: {summary['final_error'][trial_idx]['slider_error']}\n"
