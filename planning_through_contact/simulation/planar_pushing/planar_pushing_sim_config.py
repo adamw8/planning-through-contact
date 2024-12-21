@@ -55,6 +55,8 @@ class MultiRunConfig:
         rot_tol: float = 0.01,  # degrees
         evaluate_final_pusher_position: bool = True,
         evaluate_final_slider_rotation: bool = True,
+        success_criteria: str = "tolerance",
+        dataset_path: str = None,
         slider_physical_properties: PhysicalProperties = None,
     ):
         # Set up multi run config
@@ -96,6 +98,8 @@ class MultiRunConfig:
         self.rot_tol = rot_tol
         self.evaluate_final_pusher_position = evaluate_final_pusher_position
         self.evaluate_final_slider_rotation = evaluate_final_slider_rotation
+        self.success_criteria = success_criteria
+        self.dataset_path = dataset_path
 
     def __str__(self):
         slider_pose_str = f"initial_slider_poses: {self.initial_slider_poses}"
@@ -124,6 +128,8 @@ class MultiRunConfig:
             == other.evaluate_final_pusher_position
             and self.evaluate_final_slider_rotation
             == other.evaluate_final_slider_rotation
+            and self.success_criteria == other.success_criteria
+            and self.dataset_path == other.dataset_path
         )
 
 

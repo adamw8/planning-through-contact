@@ -124,6 +124,8 @@ multi_run_config:
   rot_tol: 5 # degrees
   evaluate_final_pusher_position: true
   evaluate_final_slider_rotation: true
+  success_criteria: 'tolerance'
+  dataset_path: /home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data.zarr
   slider_physical_properties: ${physical_properties}
 
 ## Robot specific configs

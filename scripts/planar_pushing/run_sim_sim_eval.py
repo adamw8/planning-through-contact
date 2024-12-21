@@ -11,8 +11,9 @@ from typing import Optional
 
 import hydra
 import numpy as np
+import zarr
 from omegaconf import OmegaConf
-from pydrake.all import StartMeshcat
+from pydrake.all import HPolyhedron, StartMeshcat, VPolytope
 
 from planning_through_contact.experiments.utils import get_default_plan_config
 from planning_through_contact.geometry.planar.planar_pose import PlanarPose
@@ -106,7 +107,16 @@ class SimSimEval:
         self.pusher_body = self.plant.GetBodyByName("pusher")
         self.slider_model_instance = self.environment._slider_model_instance
 
-    # TODO: rewrite
+        # Success_criteria
+        valid_success_criteria = ["tolerance", "convex_hull"]
+        self.success_criteria = self.multi_run_config.success_criteria
+        assert self.success_criteria in valid_success_criteria
+
+        if self.success_criteria == "convex_hull":
+            dataset_path = self.multi_run_config.dataset_path
+            self.pusher_goal_convex_hull = self.get_pusher_goal_polyhedron(dataset_path)
+            self.slider_goal_convex_hull = self.get_slider_goal_polyhedron(dataset_path)
+
     def simulate_environment(
         self,
         end_time: float,
@@ -155,15 +165,15 @@ class SimSimEval:
 
         # save the logs somewhere
 
-    def check_success(self, mode="tolerance"):
-        if mode == "tolerance":
-            return self.check_success_tolerance()
-        elif mode == "convex_hull":
-            return self.check_success_convex_hull()
+    def check_success(self):
+        if self.success_criteria == "tolerance":
+            return self._check_success_tolerance()
+        elif self.success_criteria == "convex_hull":
+            return self._check_success_convex_hull()
         else:
             raise ValueError(f"Invalid mode: {mode}")
 
-    def check_success_tolerance(self):
+    def _check_success_tolerance(self):
         # slider
         slider_pose = self.get_slider_pose()
         slider_goal_pose = self.sim_config.slider_goal_pose
@@ -196,6 +206,17 @@ class SimSimEval:
         ):
             return False
         return True
+
+    def _check_success_convex_hull(self):
+        slider_pose = self.get_slider_pose().vector()
+        pusher_position = self.get_pusher_pose().vector()[:2]
+
+        slider_success = self.is_contained(slider_pose, self.slider_goal_convex_hull)
+        pusher_success = self.is_contained(
+            pusher_position, self.pusher_goal_convex_hull
+        )
+        print(f"Slider success: {slider_success}, Pusher success: {pusher_success}")
+        return slider_success and pusher_success
 
     def check_failure(self, t, last_reset_time):
         # Check timeout
@@ -258,6 +279,24 @@ class SimSimEval:
             self.mbp_context, self.slider_model_instance
         )
         return PlanarPose.from_generalized_coords(slider_pose)
+
+    def get_pusher_goal_polyhedron(self, dataset_path):
+        root = zarr.open(dataset_path, mode="r")
+        indices = np.array(root["meta/episode_ends"]) - 1
+        state = np.array(root["data/state"])
+        final_positions = state[indices][:, :2]
+        return HPolyhedron(VPolytope(final_positions.transpose()))
+
+    def get_slider_goal_polyhedron(self, dataset_path):
+        root = zarr.open(dataset_path, mode="r")
+        indices = np.array(root["meta/episode_ends"]) - 1
+        state = np.array(root["data/slider_state"])
+        final_states = state[indices]
+        return HPolyhedron(VPolytope(final_states.transpose()))
+
+    def is_contained(self, point, polyhedron):
+        A, b = polyhedron.A(), polyhedron.b()
+        return np.all(A @ point <= b)
 
 
 def print_blue(text):
