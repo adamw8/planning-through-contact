@@ -1,6 +1,7 @@
 import argparse
 import csv
 import os
+import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -98,7 +99,21 @@ def main():
         return
 
     print(f"Loaded {len(jobs)} jobs from {csv_file}.")
-    print(f"Running with up to {max_concurrent_jobs} concurrent jobs.")
+    print(f"Running with up to {max_concurrent_jobs} concurrent jobs.\n")
+
+    for job in jobs:
+        output_dir = job[1]
+        if os.path.exists(output_dir):
+            print(
+                f"Output directory '{output_dir}' already exists. Running this job will delete the existing contents."
+            )
+            resp = input("Run job anyways? [y/n]: ")
+            if resp.lower() == "y":
+                print("Deleting output directory...\n")
+                shutil.rmtree(output_dir)
+            else:
+                print("Exiting...")
+                return
 
     with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
         futures = {
