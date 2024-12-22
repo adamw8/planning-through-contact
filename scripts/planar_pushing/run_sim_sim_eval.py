@@ -45,11 +45,12 @@ from planning_through_contact.visualize.analysis import (
 )
 
 
-class FailureMode(Enum):
+class Result(Enum):
     NONE = "none"
     SLIDER_FELL_OFF_TABLE = "slider fell"
     TIMEOUT = "timeout"
     ELBOW_DOWN = "elbow down"
+    SUCCESS = "success"
 
 
 class SimSimEval:
@@ -142,12 +143,11 @@ class SimSimEval:
         last_reset_time = t
         num_successful_trials = 0
         num_completed_trials = 0
-        logged_initial_conditions = False
         meshcat = self.environment._meshcat
         summary = {
             "successful_trials": [],
             "trial_times": [],
-            "initial_conditions": [],
+            "initial_conditions": [self.get_slider_pose().vector()],
             "final_error": [],
             "trial_result": [],
         }
@@ -159,14 +159,6 @@ class SimSimEval:
         while t < end_time:
             self.environment._simulator.AdvanceTo(t)
 
-            # Log initial conditions
-            if (
-                t - last_reset_time > self.sim_config.delay_before_execution
-                and not logged_initial_conditions
-            ):
-                summary["initial_conditions"].append(self.get_slider_pose().vector())
-                logged_initial_conditions = True
-
             # Check for failure
             reset_environment = False
             success = False
@@ -174,8 +166,9 @@ class SimSimEval:
                 success = True
                 reset_environment = True
                 num_successful_trials += 1
+                result = Result.SUCCESS
                 summary["successful_trials"].append(num_completed_trials)
-                summary["trial_result"].append("success")
+                summary["trial_result"].append(Result.SUCCESS.value)
                 summary["trial_times"].append(
                     self.get_trial_duration(t, last_reset_time)
                 )
@@ -185,9 +178,14 @@ class SimSimEval:
                 if failure:
                     reset_environment = True
                     summary["trial_result"].append(mode.value)
-                    if mode == FailureMode.TIMEOUT:
+                    result = mode
+                    if mode == Result.TIMEOUT:
                         summary["trial_times"].append(
                             self.multi_run_config.max_attempt_duration
+                        )
+                    else:
+                        summary["trial_times"].append(
+                            self.get_trial_duration(t, last_reset_time)
                         )
 
             # Reset environment
@@ -195,12 +193,19 @@ class SimSimEval:
                 # Log final error
                 final_error = self.get_final_error()
                 summary["final_error"].append(final_error)
+                self.update_summary(
+                    num_completed_trials,
+                    result,
+                    summary["trial_times"][-1],
+                    summary["initial_conditions"][-1],
+                    final_error,
+                )
 
                 # Reset environment
                 self.reset_environment()
+                summary["initial_conditions"].append(self.get_slider_pose().vector())
                 last_reset_time = t
                 num_completed_trials += 1
-                logged_initial_conditions = False
 
             # Finished Eval
             if num_completed_trials >= self.multi_run_config.num_runs:
@@ -275,23 +280,23 @@ class SimSimEval:
         # Check timeout
         duration = self.get_trial_duration(t, last_reset_time)
         if duration > self.multi_run_config.max_attempt_duration:
-            return True, FailureMode.TIMEOUT
+            return True, Result.TIMEOUT
 
         # Check if slider is on table
         slider_pose = self.plant.GetPositions(
             self.mbp_context, self.slider_model_instance
         )
         if slider_pose[-1] < 0.0:  # z value
-            return True, FailureMode.SLIDER_FELL_OFF_TABLE
+            return True, Result.SLIDER_FELL_OFF_TABLE
 
         ELBOW_INDEX = 3
         ELBOW_THRESHOLD = 5 * np.pi / 180
         elbow_angle = self.get_robot_joint_angles()[ELBOW_INDEX]
         if elbow_angle > ELBOW_THRESHOLD:
-            return True, FailureMode.ELBOW_DOWN
+            return True, Result.ELBOW_DOWN
 
         # No immediate failures
-        return False, FailureMode.NONE
+        return False, Result.NONE
 
     def get_trial_duration(self, t, last_reset_time):
         return t - last_reset_time - self.sim_config.delay_before_execution
@@ -372,12 +377,29 @@ class SimSimEval:
         return np.all(A @ point <= b)
 
     # Logging infrastructure
+    def update_summary(
+        self, trial_idx, result, trial_time, initial_conditions, final_error
+    ):
+        with open(os.path.join(self.output_dir, "summary.txt"), "a") as f:
+            f.write(f"Trial {trial_idx + 1}\n")
+            f.write("--------------------\n")
+            f.write(f"Result: {result.value}\n")
+            f.write(f"Trial time: {trial_time:.2f}\n")
+            f.write(f"Initial slider pose: {initial_conditions}\n")
+            f.write(f"Final pusher error: {final_error['pusher_error']}\n")
+            f.write(f"Final slider error: {final_error['slider_error']}\n")
+            f.write("\n")
+
     def save_summary(self, summary):
         summary_path = os.path.join(self.output_dir, "summary.pkl")
         with open(summary_path, "wb") as f:
             pickle.dump(summary, f)
 
-        # write summary to summary.txt
+        # Read the current content
+        with open(os.path.join(self.output_dir, "summary.txt"), "r") as f:
+            existing_content = f.read()
+
+        # Write the new content
         with open(os.path.join(self.output_dir, "summary.txt"), "w") as f:
             f.write("Evaluation Summary\n")
             f.write("====================================\n")
@@ -405,21 +427,8 @@ class SimSimEval:
             f.write(f"Workspace height: {self.cfg.multi_run_config.workspace_height}\n")
             f.write("====================================\n\n")
 
-            for trial_idx, result in enumerate(summary["trial_result"]):
-                f.write(f"Trial {trial_idx + 1}\n")
-                f.write("--------------------\n")
-                f.write(f"Result: {result}\n")
-                f.write(f"Trial time: {summary['trial_times'][trial_idx]:.2f}\n")
-                f.write(
-                    f"Initial slider pose: {summary['initial_conditions'][trial_idx]}\n"
-                )
-                f.write(
-                    f"Final pusher error: {summary['final_error'][trial_idx]['pusher_error']}\n"
-                )
-                f.write(
-                    f"Final slider error: {summary['final_error'][trial_idx]['slider_error']}\n"
-                )
-                f.write("\n")
+            # Append the existing content
+            f.write(existing_content)
 
     def print_summary(self, summary_path):
         with open(summary_path, "r") as file:
@@ -444,6 +453,6 @@ def main(cfg: OmegaConf):
 if __name__ == "__main__":
     """
     Configure sim config through hydra yaml file
-    Ex: python scripts/diffusion_policy/planar_pushing/run_sim_sim_eval.py --config-dir <dir> --config-name <file>
+    Ex: python scripts/planar_pushing/run_sim_sim_eval.py --config-dir <dir> --config-name <file>
     """
     main()
