@@ -11,6 +11,9 @@ diffusion_policy_logs/
 scripts/adam
 outputs/
 multirun/
+eval/
+config/launch_eval.txt
+planning_through_contact/simulation/models/arbitrary_shape.sdf
 
 # Vim
 *.swp
