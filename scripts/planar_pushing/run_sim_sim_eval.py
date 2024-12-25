@@ -571,7 +571,9 @@ class SimSimEval:
             f.write(f"Success criteria: {self.success_criteria}\n")
             if self.success_criteria == "tolerance":
                 f.write(f"Translation tolerance: {self.multi_run_config.trans_tol}\n")
-                f.write(f"Rotation tolerance: {self.multi_run_config.rot_tol}\n")
+                f.write(
+                    f"Rotation tolerance: {np.deg2rad(self.multi_run_config.rot_tol):.6f}\n"
+                )
                 f.write(
                     f"Evaluate final slider rotation: {self.multi_run_config.evaluate_final_slider_rotation}\n"
                 )
