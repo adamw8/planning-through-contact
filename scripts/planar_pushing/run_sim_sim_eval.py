@@ -174,7 +174,6 @@ class SimSimEval:
         while t < end_time:
             self.environment._simulator.AdvanceTo(t)
 
-            # Check for failure
             if sim_mode == SimulationMode.EVAL:
                 reset_environment = False
                 success = self.check_success()
@@ -286,7 +285,9 @@ class SimSimEval:
         slider_goal_pose = self.sim_config.slider_goal_pose
         slider_error = slider_goal_pose.vector() - slider_pose.vector()
         reached_goal_slider_position = np.linalg.norm(slider_error[:2]) <= trans_tol
-        reached_goal_slider_orientation = np.abs(slider_error[2]) <= rot_tol
+        reached_goal_slider_orientation = (
+            np.abs(slider_error[2]) <= rot_tol * 180 / np.pi
+        )
 
         # pusher
         pusher_pose = self.get_pusher_pose()
