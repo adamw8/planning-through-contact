@@ -50,6 +50,7 @@ class IiwaPlanner(LeafSystem):
             AbstractValue.Make(IiwaPlannerMode.PLAN_GO_PUSH_START)
         )
 
+        # Update this on reset
         self._times_index = self.DeclareAbstractState(
             AbstractValue.Make({"initial": initial_delay})
         )
@@ -84,6 +85,11 @@ class IiwaPlanner(LeafSystem):
         self._internal_model = robot_plant
 
         self._sim_config = sim_config
+
+        self.reset_planner = False
+
+        self.vel_limits = 1 * np.ones(7)  # 0.15
+        self.accel_limits = 1 * np.ones(7)
 
     def Update(self, context, state):
         # FSM Logic for planner
@@ -126,6 +132,20 @@ class IiwaPlanner(LeafSystem):
                 global time_pushing_transition
                 time_pushing_transition = current_time
             return
+        elif self.reset_planner:
+            # Resets the planner to the initial state
+            # This is somewhat of a hack: ideally, reset is handled from some event and trigger
+            self.reset_planner = False
+            state.get_mutable_abstract_state(int(self._times_index)).set_value(
+                {"initial": current_time}
+            )
+            context.get_discrete_state(self._q0_index).set_value(
+                self.get_input_port(int(self._iiwa_position_measured_index)).Eval(
+                    context
+                )
+            )
+            self.PlanGoPushStart(context, state)
+
         # elif mode == IiwaPlannerMode.PUSHING:
         #     current_pos = self.get_input_port(
         #         self._iiwa_position_measured_index
@@ -141,10 +161,6 @@ class IiwaPlanner(LeafSystem):
         state.get_mutable_abstract_state(int(self._traj_q_index)).set_value(q_traj)
         times = state.get_mutable_abstract_state(int(self._times_index)).get_value()
 
-        total_delay = q_traj.end_time() + context.get_time() + self._wait_push_delay
-        assert (
-            self._sim_config.delay_before_execution >= total_delay
-        ), f"Not enough time to execute plan. Required time: {total_delay}s."
         times["go_push_start_initial"] = context.get_time()
         times["go_push_start_final"] = q_traj.end_time() + context.get_time()
         times["wait_push_final"] = times["go_push_start_final"] + self._wait_push_delay
@@ -200,6 +216,13 @@ class IiwaPlanner(LeafSystem):
             self.get_input_port(int(self._iiwa_position_measured_index)).Eval(context),
         )
 
+    def reset(self):
+        self.reset_planner = True
+
+    def set_toppra_limits(self, vel_limits, accel_limits):
+        self.vel_limits = vel_limits
+        self.accel_limits = accel_limits
+
     def get_desired_start_pos(self):
         # Set iiwa starting position
         global desired_pose
@@ -246,8 +269,8 @@ class IiwaPlanner(LeafSystem):
         logger.debug(f"q_start = {q_start}")
         logger.debug(f"q_goal = {q_goal}")
 
-        vel_limits = 1 * np.ones(7)  # 0.15
-        accel_limits = 1 * np.ones(7)
+        vel_limits = self.vel_limits
+        accel_limits = self.accel_limits
         # Set non-zero h_min for start and goal to enforce zero velocity.
         start = gcs.AddRegions([Point(q_start)], order=1, h_min=0.1)
         goal = gcs.AddRegions([Point(q_goal)], order=1, h_min=0.1)

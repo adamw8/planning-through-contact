@@ -49,8 +49,14 @@ class Result(Enum):
     NONE = "none"
     SLIDER_FELL_OFF_TABLE = "slider fell"
     TIMEOUT = "timeout"
+    MISSED_GOAL = "missed goal"
     ELBOW_DOWN = "elbow down"
     SUCCESS = "success"
+
+
+class SimulationMode(Enum):
+    EVAL = "eval"
+    RETURN_TO_START = "return_to_start"
 
 
 class SimSimEval:
@@ -122,6 +128,9 @@ class SimSimEval:
         self.robot_model_instance = self.environment._robot_model_instance
         self.slider_model_instance = self.environment._slider_model_instance
 
+        self.run_flag_port = self.environment._robot_system.GetOutputPort("run_flag")
+        self.robot_system_context = self.environment.robot_system_context
+
         # Success_criteria
         valid_success_criteria = ["tolerance", "convex_hull"]
         self.success_criteria = self.multi_run_config.success_criteria
@@ -131,6 +140,10 @@ class SimSimEval:
             dataset_path = self.multi_run_config.dataset_path
             self.pusher_goal_convex_hull = self.get_pusher_goal_polyhedron(dataset_path)
             self.slider_goal_convex_hull = self.get_slider_goal_polyhedron(dataset_path)
+
+        # Delete log file if it already exists
+        if os.path.exists(os.path.join(self.output_dir, "summary.txt")):
+            os.remove(os.path.join(self.output_dir, "summary.txt"))
 
     def simulate_environment(
         self,
@@ -151,6 +164,8 @@ class SimSimEval:
             "final_error": [],
             "trial_result": [],
         }
+        sim_mode = SimulationMode.EVAL
+        prev_run_flag = True  # default value is True
 
         # Simulate
         meshcat.StartRecording(frames_per_second=10)
@@ -160,64 +175,87 @@ class SimSimEval:
             self.environment._simulator.AdvanceTo(t)
 
             # Check for failure
-            reset_environment = False
-            success = False
-            if self.check_success():
-                success = True
-                reset_environment = True
-                num_successful_trials += 1
-                result = Result.SUCCESS
-                summary["successful_trials"].append(num_completed_trials)
-                summary["trial_result"].append(Result.SUCCESS.value)
-                summary["trial_times"].append(
-                    self.get_trial_duration(t, last_reset_time)
-                )
-            # Check for failure
-            else:
-                failure, mode = self.check_failure(t, last_reset_time)
-                if failure:
+            if sim_mode == SimulationMode.EVAL:
+                reset_environment = False
+                success = self.check_success()
+                if success:
                     reset_environment = True
-                    summary["trial_result"].append(mode.value)
-                    result = mode
-                    if mode == Result.TIMEOUT:
-                        summary["trial_times"].append(
-                            self.multi_run_config.max_attempt_duration
-                        )
-                    else:
-                        summary["trial_times"].append(
-                            self.get_trial_duration(t, last_reset_time)
-                        )
-
-            # Reset environment
-            if reset_environment:
-                # Log final error
-                final_error = self.get_final_error()
-                summary["final_error"].append(final_error)
-                self.update_summary(
-                    num_completed_trials,
-                    result,
-                    summary["trial_times"][-1],
-                    summary["initial_conditions"][-1],
-                    final_error,
-                )
+                    num_successful_trials += 1
+                    result = Result.SUCCESS
+                    summary["successful_trials"].append(num_completed_trials)
+                    summary["trial_result"].append(Result.SUCCESS.value)
+                    summary["trial_times"].append(
+                        self.get_trial_duration(t, last_reset_time)
+                    )
+                # Check for failure
+                else:
+                    failure, mode = self.check_failure(t, last_reset_time)
+                    if failure:
+                        reset_environment = True
+                        summary["trial_result"].append(mode.value)
+                        result = mode
+                        if mode == Result.TIMEOUT or mode == Result.MISSED_GOAL:
+                            summary["trial_times"].append(
+                                self.multi_run_config.max_attempt_duration
+                            )
+                        else:
+                            summary["trial_times"].append(
+                                self.get_trial_duration(t, last_reset_time)
+                            )
 
                 # Reset environment
-                self.reset_environment()
-                summary["initial_conditions"].append(self.get_slider_pose().vector())
-                last_reset_time = t
-                num_completed_trials += 1
+                if reset_environment:
+                    # Log final error
+                    final_error = self.get_final_error()
+                    summary["final_error"].append(final_error)
+                    self.update_summary(
+                        num_completed_trials,
+                        result,
+                        summary["trial_times"][-1],
+                        summary["initial_conditions"][-1],
+                        final_error,
+                    )
 
-            # Finished Eval
-            if num_completed_trials >= self.multi_run_config.num_runs:
-                break
+                    # Reset environment
+                    self.plan_to_start()
+                    sim_mode = SimulationMode.RETURN_TO_START
+                    num_completed_trials += 1
+
+                    if (
+                        num_completed_trials
+                        >= self.multi_run_config.num_trials_to_record
+                    ):
+                        meshcat.StopRecording()
+
+                # Finished Eval
+                if num_completed_trials >= self.multi_run_config.num_runs:
+                    break
+            elif sim_mode == SimulationMode.RETURN_TO_START:
+                # Repeatedly reset diffusion policy until run_flag is True
+                self.reset_controller()
+
+                # evaluate run_flag
+                run_flag = bool(self.run_flag_port.Eval(self.robot_system_context))
+                if (
+                    not prev_run_flag and run_flag
+                ):  # run flag switched from False to True
+                    self.reset_environment()
+                    last_reset_time = t
+                    summary["initial_conditions"].append(
+                        self.get_slider_pose().vector()
+                    )
+                    sim_mode = SimulationMode.EVAL
+                prev_run_flag = run_flag
+            else:
+                raise ValueError(f"Invalid mode: {sim_mode}")
 
             # Loop updates
             t += time_step
             t = round(t / time_step) * time_step
-        summary["total_eval_time"] = t
 
         # Save logs
-        if self.multi_run_config.save_recording:
+        summary["total_eval_time"] = t
+        if self.multi_run_config.num_trials_to_record > 0:
             self.environment.save_recording("eval.html", self.output_dir)
         self.save_summary(summary)
         self.print_summary(os.path.join(self.output_dir, "summary.txt"))
@@ -225,30 +263,28 @@ class SimSimEval:
 
     def check_success(self):
         if self.success_criteria == "tolerance":
-            return self._check_success_tolerance()
+            return self._check_success_tolerance(
+                self.multi_run_config.trans_tol, self.multi_run_config.rot_tol
+            )
         elif self.success_criteria == "convex_hull":
             return self._check_success_convex_hull()
         else:
             raise ValueError(f"Invalid mode: {mode}")
 
-    def _check_success_tolerance(self):
+    def _check_success_tolerance(self, trans_tol, rot_tol):
         # slider
         slider_pose = self.get_slider_pose()
         slider_goal_pose = self.sim_config.slider_goal_pose
         slider_error = slider_goal_pose.vector() - slider_pose.vector()
-        reached_goal_slider_position = (
-            np.linalg.norm(slider_error[:2]) <= self.multi_run_config.trans_tol
-        )
-        reached_goal_slider_orientation = (
-            np.abs(slider_error[2]) <= self.multi_run_config.rot_tol
-        )
+        reached_goal_slider_position = np.linalg.norm(slider_error[:2]) <= trans_tol
+        reached_goal_slider_orientation = np.abs(slider_error[2]) <= rot_tol
 
         # pusher
         pusher_pose = self.get_pusher_pose()
         pusher_goal_pose = self.sim_config.pusher_start_pose
         pusher_error = pusher_goal_pose.vector() - pusher_pose.vector()
         reached_goal_pusher_position = (
-            np.linalg.norm(pusher_error[:2]) <= 1.5 * self.multi_run_config.trans_tol
+            np.linalg.norm(pusher_error[:2]) <= 1.5 * trans_tol
         )
 
         if not reached_goal_slider_position:
@@ -265,6 +301,11 @@ class SimSimEval:
             return False
         return True
 
+    def check_close_to_goal(self):
+        return self._check_success_tolerance(
+            2 * self.multi_run_config.trans_tol, 2 * self.multi_run_config.rot_tol
+        )
+
     def _check_success_convex_hull(self):
         slider_pose = self.get_slider_pose().vector()
         pusher_position = self.get_pusher_pose().vector()[:2]
@@ -280,7 +321,10 @@ class SimSimEval:
         # Check timeout
         duration = self.get_trial_duration(t, last_reset_time)
         if duration > self.multi_run_config.max_attempt_duration:
-            return True, Result.TIMEOUT
+            if self.check_close_to_goal():
+                return True, Result.MISSED_GOAL
+            else:
+                return True, Result.TIMEOUT
 
         # Check if slider is on table
         slider_pose = self.plant.GetPositions(
@@ -299,7 +343,7 @@ class SimSimEval:
         return False, Result.NONE
 
     def get_trial_duration(self, t, last_reset_time):
-        return t - last_reset_time - self.sim_config.delay_before_execution
+        return t - last_reset_time - self.sim_config.diffusion_policy_config.delay
 
     def get_final_error(self):
         pusher_pose = self.get_pusher_pose()
@@ -323,6 +367,16 @@ class SimSimEval:
             slider_pose,
             self.pusher_start_pose,
         )
+
+    def reset_controller(self):
+        self.environment.reset(
+            None,
+            None,
+            self.pusher_start_pose,
+        )
+
+    def plan_to_start(self):
+        self.environment._robot_system._planner.reset()
 
     def get_planar_pushing_log(self, vector_log, traj_start_time):
         start_idx = 0

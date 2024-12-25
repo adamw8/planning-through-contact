@@ -237,8 +237,9 @@ class DiffusionPolicyController(LeafSystem):
             )
             print(f"Time: {time:.3f}, action: {self._current_action}")
 
-    def reset(self, reset_position: np.ndarray):
-        self._current_action = reset_position
+    def reset(self, reset_position: np.ndarray = None):
+        if reset_position is not None:
+            self._current_action = reset_position
         self._actions.clear()
         self._pusher_pose_deque.clear()
         for image_deque in self._image_deque_dict.values():

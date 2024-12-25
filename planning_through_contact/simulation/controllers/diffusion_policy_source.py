@@ -114,7 +114,7 @@ class DiffusionPolicySource(DesiredPlanarPositionSourceBase):
 
         builder.BuildInto(self)
 
-    def reset(self, pusher_position: np.ndarray):
+    def reset(self, pusher_position: np.ndarray = None):
         self._diffusion_policy_controller.reset(pusher_position)
 
 

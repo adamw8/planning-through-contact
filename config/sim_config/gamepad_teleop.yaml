@@ -53,7 +53,7 @@ diffusion_policy_config:
   target_slider_pose: ${slider_goal_pose}
   diffusion_policy_path: '/home/adam/workspace/gcs-diffusion'
   freq: 10.0
-  delay: ${delay_before_execution}
+  delay: 1.0
   debug: false
   device: 'cuda:0'
   cfg_overrides:
@@ -111,7 +111,7 @@ domain_randomization_color_range: 0.0
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig
-  num_runs: 500
+  num_runs: 5
   max_attempt_duration: 60
   seed: 0
   slider_type: ${slider_type}
@@ -133,13 +133,14 @@ multi_run_config:
 ## Robot specific configs
 # sim_config
 scene_directive_name: 'planar_pushing_iiwa_plant_hydroelastic.yaml'
-default_joint_positions: [0.41, 0.88, -0.65, -1.45, 0.59, 1.01, 2.76]
+default_joint_positions: [0.6202, 1.0135, -0.5873, -1.4182, 0.6449, 0.8986, 2.98796]
 
 # position controller / robot station
 robot_station:
   _target_: planning_through_contact.simulation.controllers.iiwa_hardware_station.IiwaHardwareStation
   sim_config: null  # override in hydra.utils.instantiate
   meshcat: null     # override in hydra.utils.instantiate
+joint_velocity_limit_factor: 1.0 # .inf
 
 ## Data Collection Config
 data_collection_config:

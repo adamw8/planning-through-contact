@@ -59,7 +59,7 @@ class MultiRunConfig:
         dataset_path: str = None,
         slider_physical_properties: PhysicalProperties = None,
         pre_compute_initial_conditions: bool = True,
-        save_recording: bool = True,
+        num_trials_to_record: int = 0,
     ):
         # Set up multi run config
         config = get_default_plan_config(
@@ -104,7 +104,7 @@ class MultiRunConfig:
         self.evaluate_final_slider_rotation = evaluate_final_slider_rotation
         self.success_criteria = success_criteria
         self.dataset_path = dataset_path
-        self.save_recording = save_recording
+        self.num_trials_to_record = num_trials_to_record
 
     def __str__(self):
         slider_pose_str = f"initial_slider_poses: {self.initial_slider_poses}"
@@ -137,7 +137,7 @@ class MultiRunConfig:
             and self.dataset_path == other.dataset_path
             and self.pre_compute_initial_conditions
             == other.pre_compute_initial_conditions
-            and self.save_recording == other.save_recording
+            and self.num_trials_to_record == other.num_trials_to_record
         )
 
 
@@ -164,6 +164,7 @@ class PlanarPushingSimConfig:
     diffusion_policy_config: DiffusionPolicyConfig = None
     scene_directive_name: str = "planar_pushing_iiwa_plant_hydroelastic.yaml"
     use_hardware: bool = False
+    joint_velocity_limit_factor: float = 1.0
     pusher_z_offset: float = 0.05
     camera_configs: List[CameraConfig] = None
     domain_randomization_color_range: float = 0.0
@@ -242,6 +243,8 @@ class PlanarPushingSimConfig:
             )
         if "default_joint_positions" in cfg:
             sim_config.default_joint_positions = np.array(cfg.default_joint_positions)
+        if "joint_velocity_limit_factor" in cfg:
+            sim_config.joint_velocity_limit_factor = cfg.joint_velocity_limit_factor
         if "mpc_config" in cfg:
             sim_config.mpc_config = hydra.utils.instantiate(cfg.mpc_config)
         if "diffusion_policy_config" in cfg:
@@ -373,4 +376,5 @@ class PlanarPushingSimConfig:
             and self.arbitrary_shape_pickle_path == other.arbitrary_shape_pickle_path
             and np.allclose(self.arbitrary_shape_rgba, other.arbitrary_shape_rgba)
             and self.slider_physical_properties == other.slider_physical_properties
+            and self.joint_velocity_limit_factor == other.joint_velocity_limit_factor
         )
