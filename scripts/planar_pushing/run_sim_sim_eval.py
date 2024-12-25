@@ -222,7 +222,7 @@ class SimSimEval:
                     )
                     self.save_plot(
                         combined_logs,
-                        f"{self.output_dir}/analysis/{num_completed_trials}.png",
+                        f"{self.output_dir}/analysis/{num_completed_trials:03}.png",
                         result,
                     )
 
@@ -469,52 +469,58 @@ class SimSimEval:
 
     def save_plot(self, planar_pushing_log, filepath, result):
         import matplotlib.pyplot as plt
+        import numpy as np
 
-        # Create 2 subplots for pusher_actual and slider_actual
+        # Create 3 subplots for pusher_error, slider_error, and slider_orientation_error
         pusher_actual = planar_pushing_log.pusher_actual
         slider_actual = planar_pushing_log.slider_actual
 
-        fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+        # Calculate errors
+        pusher_error_x = np.array(pusher_actual.x) - self.pusher_start_pose.x
+        pusher_error_y = np.array(pusher_actual.y) - self.pusher_start_pose.y
 
-        # Plot Pusher Data
-        axs[0].plot(pusher_actual.t, pusher_actual.x, label="x", color="C0")
-        axs[0].plot(pusher_actual.t, pusher_actual.y, label="y", color="C1")
-        axs[0].axhline(
-            self.pusher_start_pose.x, color="C0", linestyle="--", label="Target x"
-        )
-        axs[0].axhline(
-            self.pusher_start_pose.y, color="C1", linestyle="--", label="Target y"
-        )
-        axs[0].set_title("Pusher")
+        slider_error_x = np.array(slider_actual.x) - self.slider_goal_pose.x
+        slider_error_y = np.array(slider_actual.y) - self.slider_goal_pose.y
+        slider_error_theta = np.array(slider_actual.theta) - self.slider_goal_pose.theta
+
+        fig, axs = plt.subplots(3, 1, figsize=(6, 9))
+
+        # Plot Pusher Error
+        axs[0].plot(pusher_actual.t, pusher_error_x, label="Error x", color="C0")
+        axs[0].plot(pusher_actual.t, pusher_error_y, label="Error y", color="C1")
+        axs[0].set_title("Pusher Position Error")
+        axs[0].set_xlabel("Time (s)")
+        axs[0].set_ylabel("Error (m)")
+        axs[0].axhline(0, color="black", linestyle="--", linewidth=0.8, alpha=0.7)
         axs[0].legend()
 
-        # Plot Slider Data
-        axs[1].plot(slider_actual.t, slider_actual.x, label="x", color="C0")
-        axs[1].plot(slider_actual.t, slider_actual.y, label="y", color="C1")
-        axs[1].plot(slider_actual.t, slider_actual.theta, label="theta", color="C2")
-        axs[1].axhline(
-            self.slider_goal_pose.x, color="C0", linestyle="--", label="Target x"
-        )
-        axs[1].axhline(
-            self.slider_goal_pose.y, color="C1", linestyle="--", label="Target y"
-        )
-        axs[1].axhline(
-            self.slider_goal_pose.theta,
-            color="C2",
-            linestyle="--",
-            label="Target theta",
-        )
-        axs[1].set_title("Slider")
+        # Plot Slider Position Error
+        axs[1].plot(slider_actual.t, slider_error_x, label="Error x", color="C0")
+        axs[1].plot(slider_actual.t, slider_error_y, label="Error y", color="C1")
+        axs[1].set_title("Slider Position Error")
+        axs[1].set_xlabel("Time (s)")
+        axs[1].set_ylabel("Error (m)")
+        axs[1].axhline(0, color="black", linestyle="--", linewidth=0.8, alpha=0.7)
         axs[1].legend()
 
-        # Add the result string to the second subplot
-        axs[1].text(
+        # Plot Slider Orientation Error
+        axs[2].plot(
+            slider_actual.t, slider_error_theta, label="Error theta", color="C2"
+        )
+        axs[2].set_title("Slider Orientation Error")
+        axs[2].set_xlabel("Time (s)")
+        axs[2].set_ylabel("Error (rad)")
+        axs[2].axhline(0, color="black", linestyle="--", linewidth=0.8, alpha=0.7)
+        axs[2].legend()
+
+        # Add the result string to the third subplot
+        axs[2].text(
             0.95,
-            -0.15,  # Position slightly below the second plot
+            -0.15,  # Positioned below the third plot
             f"Result: {result.value}",
             horizontalalignment="right",
             verticalalignment="center",
-            transform=axs[1].transAxes,
+            transform=axs[2].transAxes,
             fontsize=10,
             bbox=dict(facecolor="white", alpha=0.5, edgecolor="gray"),
         )
