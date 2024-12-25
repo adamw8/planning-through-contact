@@ -291,9 +291,7 @@ class SimSimEval:
         slider_goal_pose = self.sim_config.slider_goal_pose
         slider_error = slider_goal_pose.vector() - slider_pose.vector()
         reached_goal_slider_position = np.linalg.norm(slider_error[:2]) <= trans_tol
-        reached_goal_slider_orientation = (
-            np.abs(slider_error[2]) <= rot_tol * 180 / np.pi
-        )
+        reached_goal_slider_orientation = np.abs(slider_error[2]) <= np.deg2rad(rot_tol)
 
         # pusher
         pusher_pose = self.get_pusher_pose()
@@ -350,7 +348,7 @@ class SimSimEval:
             return True, Result.SLIDER_FELL_OFF_TABLE
 
         ELBOW_INDEX = 3
-        ELBOW_THRESHOLD = 5 * np.pi / 180
+        ELBOW_THRESHOLD = np.deg2rad(5)
         elbow_angle = self.get_robot_joint_angles()[ELBOW_INDEX]
         if elbow_angle > ELBOW_THRESHOLD:
             return True, Result.ELBOW_DOWN
