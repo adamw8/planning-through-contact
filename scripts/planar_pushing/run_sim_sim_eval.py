@@ -174,10 +174,13 @@ class SimSimEval:
         while t < end_time:
             self.environment._simulator.AdvanceTo(t)
 
-            if (
-                sim_mode == SimulationMode.EVAL
-                and t >= last_reset_time + self.sim_config.diffusion_policy_config.delay
-            ):
+            if sim_mode == SimulationMode.EVAL:
+                # Waiting for policy delay
+                if self.get_trial_duration(t, last_reset_time) < 0.0:
+                    t += time_step
+                    t = round(t / time_step) * time_step
+                    continue
+
                 reset_environment = False
                 success = self.check_success()
                 if success:
