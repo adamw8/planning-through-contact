@@ -205,7 +205,7 @@ class SimSimEval:
 
                 # Reset environment
                 if reset_environment:
-                    # Log final error
+                    # Logging
                     final_error = self.get_final_error()
                     summary["final_error"].append(final_error)
                     self.update_summary(
@@ -214,6 +214,16 @@ class SimSimEval:
                         summary["trial_times"][-1],
                         summary["initial_conditions"][-1],
                         final_error,
+                    )
+                    combined_logs = self.save_log(
+                        f"combined_logs_{num_completed_trials}.pkl",
+                        t - summary["trial_times"][-1],
+                        t,
+                    )
+                    self.save_plot(
+                        combined_logs,
+                        f"{self.output_dir}/analysis/{num_completed_trials}.png",
+                        result,
                     )
 
                     # Reset environment
@@ -259,7 +269,6 @@ class SimSimEval:
             self.environment.save_recording("eval.html", self.output_dir)
         self.save_summary(summary)
         self.print_summary(os.path.join(self.output_dir, "summary.txt"))
-        # TODO: log actual data
 
     def check_success(self):
         if self.success_criteria == "tolerance":
@@ -378,25 +387,6 @@ class SimSimEval:
     def plan_to_start(self):
         self.environment._robot_system._planner.reset()
 
-    def get_planar_pushing_log(self, vector_log, traj_start_time):
-        start_idx = 0
-        sample_times = vector_log.sample_times()
-        while sample_times[start_idx] < traj_start_time:
-            start_idx += 1
-
-        t = sample_times[start_idx:] - sample_times[start_idx]
-        nan_array = np.array([float("nan") for _ in t])
-        return PlanarPushingLog(
-            t=t,
-            x=vector_log.data()[0, start_idx:],
-            y=vector_log.data()[1, start_idx:],
-            theta=vector_log.data()[2, start_idx:],
-            lam=nan_array,
-            c_n=nan_array,
-            c_f=nan_array,
-            lam_dot=nan_array,
-        )
-
     def get_pusher_pose(self):
         pusher_position = self.plant.EvalBodyPoseInWorld(
             self.mbp_context, self.pusher_body
@@ -431,6 +421,109 @@ class SimSimEval:
         return np.all(A @ point <= b)
 
     # Logging infrastructure
+    def save_log(self, log_name, start_time, end_time=None):
+        pusher_log = self.environment.get_pusher_pose_log()
+        pusher_actual = self.get_planar_pushing_log(pusher_log, start_time, end_time)
+        slider_log = self.environment.get_slider_pose_log()
+        slider_actual = self.get_planar_pushing_log(slider_log, start_time, end_time)
+
+        combined_logs = CombinedPlanarPushingLogs(
+            pusher_desired=None,
+            slider_desired=None,
+            pusher_actual=pusher_actual,
+            slider_actual=slider_actual,
+        )
+
+        # Save combined_logs.pkl
+        with open(f"{self.output_dir}/analysis/{log_name}", "wb") as f:
+            pickle.dump(combined_logs, f)
+        return combined_logs
+
+    def get_planar_pushing_log(self, vector_log, start_time, end_time=None):
+        if end_time is not None:
+            assert end_time > start_time
+        start_idx = 0
+        sample_times = vector_log.sample_times()
+        while sample_times[start_idx] < start_time:
+            start_idx += 1
+        if end_time is None or end_time >= sample_times[-1]:
+            end_idx = len(sample_times)
+        else:
+            end_idx = start_idx
+            while sample_times[end_idx] < end_time:
+                end_idx += 1
+
+        # sample every 4th element between start_idx and end_idx (25hz)
+        t = sample_times[start_idx:end_idx:4] - sample_times[start_idx]
+        nan_array = np.array([float("nan") for _ in t])
+        return PlanarPushingLog(
+            t=t,
+            x=vector_log.data()[0, start_idx:end_idx:4],
+            y=vector_log.data()[1, start_idx:end_idx:4],
+            theta=vector_log.data()[2, start_idx:end_idx:4],
+            lam=nan_array,
+            c_n=nan_array,
+            c_f=nan_array,
+            lam_dot=nan_array,
+        )
+
+    def save_plot(self, planar_pushing_log, filepath, result):
+        import matplotlib.pyplot as plt
+
+        # Create 2 subplots for pusher_actual and slider_actual
+        pusher_actual = planar_pushing_log.pusher_actual
+        slider_actual = planar_pushing_log.slider_actual
+
+        fig, axs = plt.subplots(2, 1, figsize=(6, 6))
+
+        # Plot Pusher Data
+        axs[0].plot(pusher_actual.t, pusher_actual.x, label="x", color="C0")
+        axs[0].plot(pusher_actual.t, pusher_actual.y, label="y", color="C1")
+        axs[0].axhline(
+            self.pusher_start_pose.x, color="C0", linestyle="--", label="Target x"
+        )
+        axs[0].axhline(
+            self.pusher_start_pose.y, color="C1", linestyle="--", label="Target y"
+        )
+        axs[0].set_title("Pusher")
+        axs[0].legend()
+
+        # Plot Slider Data
+        axs[1].plot(slider_actual.t, slider_actual.x, label="x", color="C0")
+        axs[1].plot(slider_actual.t, slider_actual.y, label="y", color="C1")
+        axs[1].plot(slider_actual.t, slider_actual.theta, label="theta", color="C2")
+        axs[1].axhline(
+            self.slider_goal_pose.x, color="C0", linestyle="--", label="Target x"
+        )
+        axs[1].axhline(
+            self.slider_goal_pose.y, color="C1", linestyle="--", label="Target y"
+        )
+        axs[1].axhline(
+            self.slider_goal_pose.theta,
+            color="C2",
+            linestyle="--",
+            label="Target theta",
+        )
+        axs[1].set_title("Slider")
+        axs[1].legend()
+
+        # Add the result string to the second subplot
+        axs[1].text(
+            0.95,
+            -0.15,  # Position slightly below the second plot
+            f"Result: {result.value}",
+            horizontalalignment="right",
+            verticalalignment="center",
+            transform=axs[1].transAxes,
+            fontsize=10,
+            bbox=dict(facecolor="white", alpha=0.5, edgecolor="gray"),
+        )
+
+        # Save and close the plot
+        plt.tight_layout()
+        plt.savefig(filepath)
+        plt.close()
+
     def update_summary(
         self, trial_idx, result, trial_time, initial_conditions, final_error
     ):
@@ -500,6 +593,8 @@ def print_blue(text, end="\n"):
 )
 def main(cfg: OmegaConf):
     output_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    if not os.path.exists(f"{output_dir}/analysis"):
+        os.makedirs(f"{output_dir}/analysis")
     sim_sim_eval = SimSimEval(cfg, output_dir)
     sim_sim_eval.simulate_environment(float("inf"))
 

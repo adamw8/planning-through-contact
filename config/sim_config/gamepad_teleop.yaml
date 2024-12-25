@@ -111,7 +111,7 @@ domain_randomization_color_range: 0.0
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig
-  num_runs: 5
+  num_runs: 500
   max_attempt_duration: 60
   seed: 0
   slider_type: ${slider_type}
@@ -128,7 +128,7 @@ multi_run_config:
   dataset_path: /home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data.zarr
   slider_physical_properties: ${physical_properties}
   pre_compute_initial_conditions: false
-  save_recording: true
+  num_trials_to_record: 100
 
 ## Robot specific configs
 # sim_config
