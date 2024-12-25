@@ -153,7 +153,7 @@ class SimSimEval:
         # Loop variables
         time_step = self.sim_config.time_step * 10
         t = time_step
-        last_reset_time = t
+        last_reset_time = 0.0
         num_successful_trials = 0
         num_completed_trials = 0
         meshcat = self.environment._meshcat
@@ -217,7 +217,7 @@ class SimSimEval:
                     )
                     combined_logs = self.save_log(
                         f"combined_logs_{num_completed_trials}.pkl",
-                        t - summary["trial_times"][-1],
+                        last_reset_time,
                         t,
                     )
                     self.save_plot(
