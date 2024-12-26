@@ -105,7 +105,7 @@ data_collection_config:
   convert_to_zarr: false   # Configures whether the rendered plans should be converted to zarr
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step, leave as false
   plans_dir: 'trajectories/sim_box_data_seed_1' # Save directory for trajectories
-  rendered_plans_dir: 'trajectories_rendered/sim_box_data_rendered' # Save directory for rendered trajectories
+  rendered_plans_dir: 'trajectories_rendered/sim_box_data' # Save directory for rendered trajectories
   zarr_path: ${data_collection_config.rendered_plans_dir}/sim_box_data.zarr # Save directory for zarr dataset
   policy_freq: 10.0
   state_chunk_length: 1024
@@ -129,7 +129,7 @@ data_collection_config:
       - ${slider_goal_pose.y}
     buffer: 0.0
     seed: 1     # Seed for data generation
-    num_plans: 5 # Number of initial conditions to plan from
+    num_plans: 1250 # Number of initial conditions to plan from
     pusher_start_pose: ${pusher_start_pose}
     slider_goal_pose: ${slider_goal_pose}
     limit_rotations: false

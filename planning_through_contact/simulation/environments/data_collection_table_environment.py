@@ -278,6 +278,16 @@ class DataCollectionTableEnvironment:
             # No diff IK required for actuated cylinder
             builder.Connect(
                 self._desired_position_source.GetOutputPort("planar_position_command"),
+                pusher_adder.get_input_port(0),
+            )
+
+            builder.Connect(
+                pusher_shift_source.get_output_port(),
+                pusher_adder.get_input_port(1),
+            )
+
+            builder.Connect(
+                pusher_adder.get_output_port(),
                 self._desired_state_source.get_input_port(),
             )
 
