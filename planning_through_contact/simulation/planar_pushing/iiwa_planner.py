@@ -239,11 +239,15 @@ class IiwaPlanner(LeafSystem):
 
     @staticmethod
     def make_traj_toppra(traj, plant, vel_limits, accel_limits, num_grid_points=1000):
-        toppra = Toppra(
-            traj,
-            plant,
-            np.linspace(traj.start_time(), traj.end_time(), num_grid_points),
-        )
+        try:
+            toppra = Toppra(
+                traj,
+                plant,
+                np.linspace(traj.start_time(), traj.end_time(), num_grid_points),
+            )
+        except Exception as e:
+            print(e)
+            return traj
         toppra.AddJointVelocityLimit(-vel_limits, vel_limits)
         toppra.AddJointAccelerationLimit(-accel_limits, accel_limits)
         time_traj = toppra.SolvePathParameterization()
