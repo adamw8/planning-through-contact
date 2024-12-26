@@ -56,6 +56,8 @@ from planning_through_contact.simulation.sim_utils import (
 from planning_through_contact.visualize.colors import COLORS
 from planning_through_contact.visualize.planar_pushing import make_traj_figure
 
+logging.getLogger("matplotlib").setLevel(logging.ERROR)
+
 
 @hydra.main(
     version_base=None,
