@@ -19,15 +19,15 @@ def run_data_generation_script(config_name, config_dir, plans_dir):
 
 
 # Specify the range of indices
-start_index = 0
-end_index = 1  # Adjust this value as needed
+start_index = 2
+end_index = 99  # Adjust this value as needed
 config_dir = "config/sim_config/symmetries_project"
 config_name = "baseline.yaml"
 plans_root = f"trajectories/sim_box_data"
 
 if __name__ == "__main__":
     # Loop through the indices and execute the command
-    for i in range(start_index, end_index):
+    for i in range(start_index, end_index + 1):
         plans_dir = f"{plans_root}/run_{i}"
         print(plans_dir)
         run_data_generation_script(config_name, config_dir, plans_dir)

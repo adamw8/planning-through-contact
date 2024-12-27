@@ -83,8 +83,9 @@ class PlanConfig:
     num_plans: int
     pusher_start_pose: PlanarPose
     slider_goal_pose: PlanarPose
-    limit_rotations: bool
-    noise_final_pose: float
+    limit_rotations: bool = False
+    rotation_limit: float = None
+    noise_final_pose: float = False
 
     # Default values
     ang_velocity_regularization: float = None

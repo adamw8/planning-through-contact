@@ -354,6 +354,7 @@ def _get_slider_pose_within_workspace(
     pusher_pose: PlanarPose,
     config: PlanarPlanConfig,
     limit_rotations: bool = False,
+    rotation_limit: float = None,
     enforce_entire_slider_within_workspace: bool = True,
 ) -> PlanarPose:
     valid_pose = False
@@ -364,7 +365,10 @@ def _get_slider_pose_within_workspace(
         y_initial = np.random.uniform(workspace.slider.y_min, workspace.slider.y_max)
         EPS = 0.01
         if limit_rotations:
-            th_initial = np.random.uniform(-np.pi / 2 + EPS, np.pi / 2 - EPS)
+            if rotation_limit is not None:
+                th_initial = np.random.uniform(-rotation_limit, rotation_limit)
+            else:
+                th_initial = np.random.uniform(-np.pi / 2 + EPS, np.pi / 2 - EPS)
         else:
             th_initial = np.random.uniform(-np.pi + EPS, np.pi - EPS)
 

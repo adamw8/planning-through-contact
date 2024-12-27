@@ -159,8 +159,9 @@ def generate_plans(data_collection_config: DataCollectionConfig, cfg: OmegaConf)
         config=config,
         point=_plan_config.center,
         init_pusher_pose=_plan_config.pusher_start_pose,
-        limit_rotations=False,
-        noise_final_pose=False,
+        limit_rotations=_plan_config.limit_rotations,
+        rotation_limit=_plan_config.rotation_limit,
+        noise_final_pose=_plan_config.noise_final_pose,
     )
     print(f"Finished generating start and goal pairs.")
 
@@ -764,6 +765,7 @@ def _get_plan_start_and_goals_to_point(
     point: Tuple[float, float] = (0, 0),  # Default is origin
     init_pusher_pose: Optional[PlanarPose] = None,
     limit_rotations: bool = True,  # Use this to start with
+    rotation_limit: float = None,
     noise_final_pose: bool = False,
 ) -> List[PlanarPushingStartAndGoal]:
     """Get start and goal pairs for planar pushing task"""
@@ -784,7 +786,7 @@ def _get_plan_start_and_goals_to_point(
     plans = []
     for _ in range(num_plans):
         slider_initial_pose = get_slider_pose_within_workspace(
-            workspace, slider, pusher_pose, config, limit_rotations
+            workspace, slider, pusher_pose, config, limit_rotations, rotation_limit
         )
 
         if noise_final_pose:
