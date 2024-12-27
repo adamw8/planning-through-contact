@@ -21,8 +21,14 @@ from planning_through_contact.planning.planar.planar_plan_config import (
     BoxWorkspace,
     PlanarPushingWorkspace,
 )
+from planning_through_contact.simulation.controllers.cylinder_actuated_station import (
+    CylinderActuatedStation,
+)
 from planning_through_contact.simulation.controllers.diffusion_policy_source import (
     DiffusionPolicySource,
+)
+from planning_through_contact.simulation.controllers.iiwa_hardware_station import (
+    IiwaHardwareStation,
 )
 from planning_through_contact.simulation.controllers.robot_system_base import (
     RobotSystemBase,
@@ -128,7 +134,10 @@ class SimSimEval:
         self.robot_model_instance = self.environment._robot_model_instance
         self.slider_model_instance = self.environment._slider_model_instance
 
-        self.run_flag_port = self.environment._robot_system.GetOutputPort("run_flag")
+        if isinstance(self.environment._robot_system, IiwaHardwareStation):
+            self.run_flag_port = self.environment._robot_system.GetOutputPort(
+                "run_flag"
+            )
         self.robot_system_context = self.environment.robot_system_context
 
         # Success_criteria
@@ -222,7 +231,7 @@ class SimSimEval:
                     )
                     combined_logs = self.save_log(
                         f"combined_logs_{num_completed_trials}.pkl",
-                        last_reset_time,
+                        min(t - summary["trial_times"][-1], t),
                         t,
                     )
                     self.save_plot(
@@ -232,7 +241,8 @@ class SimSimEval:
                     )
 
                     # Reset environment
-                    self.plan_to_start()
+                    if isinstance(self.environment._robot_system, IiwaHardwareStation):
+                        self.plan_to_start()
                     sim_mode = SimulationMode.RETURN_TO_START
                     num_completed_trials += 1
 
@@ -248,12 +258,17 @@ class SimSimEval:
             elif sim_mode == SimulationMode.RETURN_TO_START:
                 # Repeatedly reset diffusion policy until run_flag is True
                 self.reset_controller()
+                if isinstance(self.environment._robot_system, CylinderActuatedStation):
+                    should_reset = True
+                    run_flag = True  # dummy value
+                else:
+                    # evaluate run_flag/reset
+                    run_flag = bool(self.run_flag_port.Eval(self.robot_system_context))
+                    should_reset = is_cylinder_actuated or (
+                        run_flag and not prev_run_flag
+                    )
 
-                # evaluate run_flag
-                run_flag = bool(self.run_flag_port.Eval(self.robot_system_context))
-                if (
-                    not prev_run_flag and run_flag
-                ):  # run flag switched from False to True
+                if should_reset:  # run flag switched from False to True
                     self.reset_environment()
                     last_reset_time = t
                     summary["initial_conditions"].append(
@@ -347,11 +362,13 @@ class SimSimEval:
         if slider_pose[-1] < 0.0:  # z value
             return True, Result.SLIDER_FELL_OFF_TABLE
 
-        ELBOW_INDEX = 3
-        ELBOW_THRESHOLD = np.deg2rad(5)
-        elbow_angle = self.get_robot_joint_angles()[ELBOW_INDEX]
-        if elbow_angle > ELBOW_THRESHOLD:
-            return True, Result.ELBOW_DOWN
+        q = self.get_robot_joint_angles()
+        if len(q) == 7:
+            ELBOW_INDEX = 3
+            ELBOW_THRESHOLD = np.deg2rad(5)
+            elbow_angle = q[ELBOW_INDEX]
+            if elbow_angle > ELBOW_THRESHOLD:
+                return True, Result.ELBOW_DOWN
 
         # No immediate failures
         return False, Result.NONE
@@ -377,7 +394,7 @@ class SimSimEval:
         )
 
         self.environment.reset(
-            np.array([0.6202, 1.0135, -0.5873, -1.4182, 0.6449, 0.8986, 2.9879]),
+            self.sim_config.default_joint_positions,
             slider_pose,
             self.pusher_start_pose,
         )

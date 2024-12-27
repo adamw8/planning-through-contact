@@ -254,8 +254,13 @@ class SimulatedRealTableEnvironment:
         self._plant.SetVelocities(self.mbp_context, self._robot_model_instance, v)
 
         # Update diff ik integrator to match new robot position
-        diff_ik_context = self._robot_system._diff_ik.GetMyContextFromRoot(self.context)
-        self._robot_system._diff_ik.SetPositions(diff_ik_context, q)
+        try:
+            diff_ik_context = self._robot_system._diff_ik.GetMyContextFromRoot(
+                self.context
+            )
+            self._robot_system._diff_ik.SetPositions(diff_ik_context, q)
+        except AttributeError:
+            pass
 
     def set_diff_ik_position(self, q: np.ndarray):
         diff_ik_context = self._robot_system._diff_ik
