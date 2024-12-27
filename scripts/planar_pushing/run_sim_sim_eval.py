@@ -177,6 +177,7 @@ class SimSimEval:
         prev_run_flag = True  # default value is True
 
         # Simulate
+        start_time = time.time()
         meshcat.StartRecording(frames_per_second=10)
         self.environment.visualize_desired_slider_pose()
         self.environment.visualize_desired_pusher_pose()
@@ -284,7 +285,8 @@ class SimSimEval:
             t = round(t / time_step) * time_step
 
         # Save logs
-        summary["total_eval_time"] = t
+        summary["total_eval_sim_time"] = t
+        summary["total_eval_wall_time"] = time.time() - start_time
         if self.multi_run_config.num_trials_to_record > 0:
             self.environment.save_recording("eval.html", self.output_dir)
         self.save_summary(summary)
@@ -584,7 +586,9 @@ class SimSimEval:
             f.write(
                 f"Success rate: {len(summary['successful_trials']) / self.multi_run_config.num_runs:.6f}\n"
             )
-            f.write(f"Total evaluation time: {summary['total_eval_time']:.2f}\n\n")
+            f.write(f"Total time (sim): {summary['total_eval_sim_time']:.2f}\n")
+            f.write(f"Total time (wall): {summary['total_eval_wall_time']:.2f}\n\n")
+
             f.write(f"Success criteria: {self.success_criteria}\n")
             if self.success_criteria == "tolerance":
                 f.write(f"Translation tolerance: {self.multi_run_config.trans_tol}\n")
