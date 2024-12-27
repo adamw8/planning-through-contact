@@ -137,6 +137,13 @@ class SimulatedRealTableEnvironment:
                     ),
                     self._desired_position_source.GetInputPort(camera_config.name),
                 )
+            if self._desired_position_source.HasInputPort(camera_config.name):
+                builder.Connect(
+                    self._robot_system.GetOutputPort(
+                        f"rgbd_sensor_{camera_config.name}"
+                    ),
+                    self._desired_position_source.GetInputPort(camera_config.name),
+                )
         if self._desired_position_source.HasInputPort("run_flag"):
             builder.Connect(
                 self._robot_system.GetOutputPort("run_flag"),
@@ -217,6 +224,9 @@ class SimulatedRealTableEnvironment:
 
         self.context = self._simulator.get_mutable_context()
         self._robot_system.pre_sim_callback(self.context)
+        self.robot_system_context = self._robot_system.GetMyContextFromRoot(
+            self.context
+        )
         self.mbp_context = self._plant.GetMyContextFromRoot(self.context)
         # initialize slider above the table
         self.set_slider_planar_pose(PlanarPose(0.587, -0.0355, 0.0))
@@ -238,9 +248,25 @@ class SimulatedRealTableEnvironment:
         self._plant.SetVelocities(self.mbp_context, self._slider, np.zeros(6))
 
     def set_robot_position(self, q: np.ndarray):
+        # Set positions and velocities
         v = np.zeros(self._plant.num_velocities(self._robot_model_instance))
         self._plant.SetPositions(self.mbp_context, self._robot_model_instance, q)
         self._plant.SetVelocities(self.mbp_context, self._robot_model_instance, v)
+
+        # Update diff ik integrator to match new robot position
+        try:
+            diff_ik_context = self._robot_system._diff_ik.GetMyContextFromRoot(
+                self.context
+            )
+            self._robot_system._diff_ik.SetPositions(diff_ik_context, q)
+        except AttributeError:
+            pass
+
+    def set_diff_ik_position(self, q: np.ndarray):
+        diff_ik_context = self._robot_system._diff_ik
+
+    def get_run_flag(self):
+        robot_system_context = self._robot_system.GetMyContextFromRoot(self.context)
 
     def reset(
         self,
@@ -248,9 +274,14 @@ class SimulatedRealTableEnvironment:
         slider_pose: PlanarPose,
         pusher_pose: PlanarPose,
     ):
-        self.set_robot_position(robot_position)
-        self.set_slider_planar_pose(slider_pose)
-        self._desired_position_source.reset(np.array([pusher_pose.x, pusher_pose.y]))
+        if robot_position is not None:
+            self.set_robot_position(robot_position)  # set robot position
+        if slider_pose is not None:
+            self.set_slider_planar_pose(slider_pose)  # set slider position
+        if pusher_pose is not None:
+            self._desired_position_source.reset(
+                np.array([pusher_pose.x, pusher_pose.y])
+            )  # reset controller
 
     def visualize_desired_slider_pose(self, time_in_recording: float = 0.0):
         if len(self._goal_geometries) == 0:

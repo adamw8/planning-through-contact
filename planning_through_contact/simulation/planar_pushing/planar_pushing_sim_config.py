@@ -55,7 +55,11 @@ class MultiRunConfig:
         rot_tol: float = 0.01,  # degrees
         evaluate_final_pusher_position: bool = True,
         evaluate_final_slider_rotation: bool = True,
+        success_criteria: str = "tolerance",
+        dataset_path: str = None,
         slider_physical_properties: PhysicalProperties = None,
+        pre_compute_initial_conditions: bool = True,
+        num_trials_to_record: int = 0,
     ):
         # Set up multi run config
         config = get_default_plan_config(
@@ -79,14 +83,17 @@ class MultiRunConfig:
                 buffer=0,
             ),
         )
-        self.initial_slider_poses = get_slider_start_poses(
-            seed=seed,
-            num_plans=num_runs,
-            workspace=workspace,
-            config=config,
-            pusher_pose=pusher_start_pose,
-            limit_rotations=False,
-        )
+
+        if pre_compute_initial_conditions:
+            self.initial_slider_poses = get_slider_start_poses(
+                seed=seed,
+                num_plans=num_runs,
+                workspace=workspace,
+                config=config,
+                pusher_pose=pusher_start_pose,
+                limit_rotations=False,
+            )
+        self.workspace = workspace
         self.num_runs = num_runs
         self.seed = seed
         self.target_slider_poses = [slider_goal_pose] * num_runs
@@ -95,6 +102,9 @@ class MultiRunConfig:
         self.rot_tol = rot_tol
         self.evaluate_final_pusher_position = evaluate_final_pusher_position
         self.evaluate_final_slider_rotation = evaluate_final_slider_rotation
+        self.success_criteria = success_criteria
+        self.dataset_path = dataset_path
+        self.num_trials_to_record = num_trials_to_record
 
     def __str__(self):
         slider_pose_str = f"initial_slider_poses: {self.initial_slider_poses}"
@@ -123,6 +133,11 @@ class MultiRunConfig:
             == other.evaluate_final_pusher_position
             and self.evaluate_final_slider_rotation
             == other.evaluate_final_slider_rotation
+            and self.success_criteria == other.success_criteria
+            and self.dataset_path == other.dataset_path
+            and self.pre_compute_initial_conditions
+            == other.pre_compute_initial_conditions
+            and self.num_trials_to_record == other.num_trials_to_record
         )
 
 
@@ -149,6 +164,7 @@ class PlanarPushingSimConfig:
     diffusion_policy_config: DiffusionPolicyConfig = None
     scene_directive_name: str = "planar_pushing_iiwa_plant_hydroelastic.yaml"
     use_hardware: bool = False
+    joint_velocity_limit_factor: float = 1.0
     pusher_z_offset: float = 0.05
     camera_configs: List[CameraConfig] = None
     domain_randomization_color_range: float = 0.0
@@ -227,6 +243,8 @@ class PlanarPushingSimConfig:
             )
         if "default_joint_positions" in cfg:
             sim_config.default_joint_positions = np.array(cfg.default_joint_positions)
+        if "joint_velocity_limit_factor" in cfg:
+            sim_config.joint_velocity_limit_factor = cfg.joint_velocity_limit_factor
         if "mpc_config" in cfg:
             sim_config.mpc_config = hydra.utils.instantiate(cfg.mpc_config)
         if "diffusion_policy_config" in cfg:
@@ -271,26 +289,45 @@ class PlanarPushingSimConfig:
                     ):
                         kwargs[key] = camera_config[key]
 
-                if "light_direction" in camera_config:
+                if (
+                    "light_direction" in camera_config
+                    or "cast_shadows" in camera_config
+                ):
                     # Create renderer and set light direction
+                    from pydrake.geometry import LightParameter, RenderEngineVtkParams
+
                     renderer_params = RenderEngineVtkParams()
-                    renderer_params.default_clear_color = np.array(
-                        [
-                            camera_config.background.r,
-                            camera_config.background.g,
-                            camera_config.background.b,
-                        ]
-                    )
-                    direction = np.array(camera_config["light_direction"])
-                    direction = direction / np.linalg.norm(direction)
-                    renderer_params.lights = [LightParameter(direction=direction)]
+
+                    # Background
+                    if "background" in camera_config:
+                        renderer_params.default_clear_color = np.array(
+                            [
+                                camera_config.background.r,
+                                camera_config.background.g,
+                                camera_config.background.b,
+                            ]
+                        )
+
+                    # Light direction
+                    if "light_direction" in camera_config:
+                        direction = np.array(camera_config["light_direction"])
+                        direction = direction / np.linalg.norm(direction)
+                        renderer_params.lights = [LightParameter(direction=direction)]
+
+                    # Shadows
+                    if "cast_shadows" in camera_config and camera_config.cast_shadows:
+                        renderer_params.cast_shadows = True
+                        renderer_params.shadow_map_size = 512
+
                     drake_camera_config = CameraConfig(
                         renderer_name=camera_config.name,
                         renderer_class=renderer_params,
                         **kwargs,
                     )
                 else:
-                    drake_camera_config = CameraConfig(**kwargs)
+                    drake_camera_config = CameraConfig(
+                        **kwargs,
+                    )
 
                 if camera_config.randomize:
                     drake_camera_config = randomize_camera_config(drake_camera_config)
@@ -339,4 +376,5 @@ class PlanarPushingSimConfig:
             and self.arbitrary_shape_pickle_path == other.arbitrary_shape_pickle_path
             and np.allclose(self.arbitrary_shape_rgba, other.arbitrary_shape_rgba)
             and self.slider_physical_properties == other.slider_physical_properties
+            and self.joint_velocity_limit_factor == other.joint_velocity_limit_factor
         )

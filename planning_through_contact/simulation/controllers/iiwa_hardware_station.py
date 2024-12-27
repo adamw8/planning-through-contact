@@ -146,6 +146,11 @@ class IiwaHardwareStation(RobotSystemBase):
         # Delay between the iiwa reaching the home position and the pusher starting to follow the planned pushing trajectory
         WAIT_PUSH_DELAY = 1.0
         assert sim_config.delay_before_execution > INITIAL_DELAY + WAIT_PUSH_DELAY
+
+        # True velocity limits for the IIWA14 and IIWA7 (in rad, rounded down to the first decimal)
+        # IIWA14_VELOCITY_LIMITS = np.array([1.4, 1.4, 1.7, 1.3, 2.2, 2.3, 2.3])
+        IIWA7_VELOCITY_LIMITS = np.array([1.7, 1.7, 1.7, 2.2, 2.4, 3.1, 3.1])
+        velocity_limit_factor = sim_config.joint_velocity_limit_factor
         self._planner = builder.AddNamedSystem(
             "IiwaPlanner",
             IiwaPlanner(
@@ -166,11 +171,7 @@ class IiwaHardwareStation(RobotSystemBase):
             robot.num_positions(), robot.num_velocities()
         )
         ik_params.set_time_step(sim_config.time_step)
-        # True velocity limits for the IIWA14 and IIWA7
-        # (in rad, rounded down to the first decimal)
-        # IIWA14_VELOCITY_LIMITS = np.array([1.4, 1.4, 1.7, 1.3, 2.2, 2.3, 2.3])
-        IIWA7_VELOCITY_LIMITS = np.array([1.7, 1.7, 1.7, 2.2, 2.4, 3.1, 3.1])
-        velocity_limit_factor = 0.3
+        velocity_limit_factor = sim_config.joint_velocity_limit_factor
         ik_params.set_joint_velocity_limits(
             (
                 -velocity_limit_factor * IIWA7_VELOCITY_LIMITS,
@@ -178,6 +179,7 @@ class IiwaHardwareStation(RobotSystemBase):
             )
         )
         ik_params.set_nominal_joint_position(self._sim_config.default_joint_positions)
+        ik_params.set_joint_centering_gain(np.eye(robot.num_positions()))
         self._diff_ik = builder.AddNamedSystem(
             "DiffIk",
             DifferentialInverseKinematicsIntegrator(
@@ -230,7 +232,7 @@ class IiwaHardwareStation(RobotSystemBase):
         # Inputs to diff IK
         builder.Connect(
             planar_translation_to_rigid_tranform.get_output_port(),
-            self._diff_ik.GetInputPort("X_WE_desired"),
+            self._diff_ik.GetInputPort("X_AE_desired"),
         )
 
         # builder.Connect(

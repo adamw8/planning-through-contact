@@ -114,6 +114,9 @@ class DiffusionPolicySource(DesiredPlanarPositionSourceBase):
 
         builder.BuildInto(self)
 
+    def reset(self, pusher_position: np.ndarray = None):
+        self._diffusion_policy_controller.reset(pusher_position)
+
 
 class AppendZeros(LeafSystem):
     def __init__(self, input_size: int, num_zeros: int):

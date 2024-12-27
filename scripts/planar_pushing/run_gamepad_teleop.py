@@ -52,6 +52,9 @@ class FSMState(Enum):
 
 class GamepadDataCollection:
     def __init__(self, cfg: OmegaConf):
+        seed = int(1e6 * time.time() % 1e6)
+        np.random.seed(seed)
+
         # start meshcat
         print(f"Station meshcat")
         station_meshcat = StartMeshcat()
@@ -127,6 +130,9 @@ class GamepadDataCollection:
     ):
         # Loop variables
         prev_button_values = self.environment.get_button_values()
+        translation_scale = (
+            self.environment._desired_position_source.get_translation_scale()
+        )
         time_step = self.sim_config.time_step * 10
         t = time_step
         validated_image_writer = False
@@ -153,6 +159,15 @@ class GamepadDataCollection:
                 self.fsm_state, pressed_buttons, t, self.traj_start_time
             )
 
+            if button_values["RT"]:
+                self.environment._desired_position_source.set_translation_scale(
+                    0.5 * translation_scale
+                )
+            else:
+                self.environment._desired_position_source.set_translation_scale(
+                    translation_scale
+                )
+
             # Loop updates
             t += time_step
             t = round(t / time_step) * time_step
@@ -163,7 +178,7 @@ class GamepadDataCollection:
             shutil.rmtree("trajectories_rendered/temp")
 
     def fsm_logic(self, fsm_state, pressed_buttons, curr_time, traj_start_time):
-        pressed_A = pressed_buttons["A"]
+        pressed_A = pressed_buttons["A"]  # Start/Save trajectory
         pressed_B = pressed_buttons["B"]  # Reset environment
         pressed_X = pressed_buttons["X"]  # Terminate
 
@@ -192,8 +207,6 @@ class GamepadDataCollection:
         return fsm_state, traj_start_time
 
     def reset_environment(self):
-        seed = int(1e6 * time.time() % 1e6)
-        np.random.seed(seed)
         slider_geometry = self.sim_config.dynamics_config.slider.geometry
         slider_pose = get_slider_pose_within_workspace(
             self.workspace, slider_geometry, self.pusher_start_pose, self.plan_config
@@ -338,7 +351,7 @@ class GamepadDataCollection:
 
 
 def print_blue(text):
-    print(f"\033[94m{text}\033[0m")
+    print(f"\033[94m{text}\033[0m", end=end)
 
 
 @hydra.main(

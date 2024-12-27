@@ -56,6 +56,8 @@ from planning_through_contact.simulation.sim_utils import (
 from planning_through_contact.visualize.colors import COLORS
 from planning_through_contact.visualize.planar_pushing import make_traj_figure
 
+logging.getLogger("matplotlib").setLevel(logging.ERROR)
+
 
 @hydra.main(
     version_base=None,
@@ -157,8 +159,9 @@ def generate_plans(data_collection_config: DataCollectionConfig, cfg: OmegaConf)
         config=config,
         point=_plan_config.center,
         init_pusher_pose=_plan_config.pusher_start_pose,
-        limit_rotations=False,
-        noise_final_pose=False,
+        limit_rotations=_plan_config.limit_rotations,
+        rotation_limit=_plan_config.rotation_limit,
+        noise_final_pose=_plan_config.noise_final_pose,
     )
     print(f"Finished generating start and goal pairs.")
 
@@ -593,6 +596,16 @@ def convert_to_zarr(
             start_time = math.ceil(t[start_idx] * freq) / freq
             del pusher_desired
 
+            # Get timestamp of initial image
+            image_dir = traj_dir.joinpath(camera_name)
+            timestamps = [
+                int(f.split(".")[0])
+                for f in os.listdir(image_dir)
+                if f.endswith(".png")
+            ]
+            first_image_time = min(timestamps) / 1000
+            assert first_image_time >= 0.0
+
             # get state, action, images
             current_time = start_time
             idx = start_idx
@@ -601,7 +614,10 @@ def convert_to_zarr(
                 idx = _get_closest_index(t, current_time, idx)
 
                 # Image names are "{time in ms}" rounded to the nearest 100th
-                image_name = round((current_time * 1000) / 100) * 100
+                image_name = (
+                    round(((current_time - first_image_time) * 1000) / 100) * 100
+                    + first_image_time * 1000
+                )
                 image_path = traj_dir.joinpath(camera_name, f"{int(image_name)}.png")
                 img = Image.open(image_path).convert("RGB")
                 img = np.asarray(img)
@@ -749,6 +765,7 @@ def _get_plan_start_and_goals_to_point(
     point: Tuple[float, float] = (0, 0),  # Default is origin
     init_pusher_pose: Optional[PlanarPose] = None,
     limit_rotations: bool = True,  # Use this to start with
+    rotation_limit: float = None,
     noise_final_pose: bool = False,
 ) -> List[PlanarPushingStartAndGoal]:
     """Get start and goal pairs for planar pushing task"""
@@ -769,7 +786,7 @@ def _get_plan_start_and_goals_to_point(
     plans = []
     for _ in range(num_plans):
         slider_initial_pose = get_slider_pose_within_workspace(
-            workspace, slider, pusher_pose, config, limit_rotations
+            workspace, slider, pusher_pose, config, limit_rotations, rotation_limit
         )
 
         if noise_final_pose:

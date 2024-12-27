@@ -110,3 +110,9 @@ class GamepadController(LeafSystem):
 
     def reset(self, reset_xy=None):
         self.init_xy = reset_xy
+
+    def set_translation_scale(self, translation_scale):
+        self.translation_scale = translation_scale
+
+    def get_translation_scale(self):
+        return self.translation_scale

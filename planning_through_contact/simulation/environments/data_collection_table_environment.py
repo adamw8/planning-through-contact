@@ -83,8 +83,9 @@ class PlanConfig:
     num_plans: int
     pusher_start_pose: PlanarPose
     slider_goal_pose: PlanarPose
-    limit_rotations: bool
-    noise_final_pose: float
+    limit_rotations: bool = False
+    rotation_limit: float = None
+    noise_final_pose: float = False
 
     # Default values
     ang_velocity_regularization: float = None
@@ -278,6 +279,16 @@ class DataCollectionTableEnvironment:
             # No diff IK required for actuated cylinder
             builder.Connect(
                 self._desired_position_source.GetOutputPort("planar_position_command"),
+                pusher_adder.get_input_port(0),
+            )
+
+            builder.Connect(
+                pusher_shift_source.get_output_port(),
+                pusher_adder.get_input_port(1),
+            )
+
+            builder.Connect(
+                pusher_adder.get_output_port(),
                 self._desired_state_source.get_input_port(),
             )
 

@@ -52,3 +52,9 @@ class GamepadControllerSource(DesiredPlanarPositionSourceBase):
 
     def reset(self, reset_xy=None):
         self._gamepad_controller.reset(reset_xy=None)
+
+    def set_translation_scale(self, translation_scale):
+        self._gamepad_controller.set_translation_scale(translation_scale)
+
+    def get_translation_scale(self):
+        return self._gamepad_controller.get_translation_scale()
