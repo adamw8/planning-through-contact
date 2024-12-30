@@ -265,9 +265,7 @@ class SimSimEval:
                 else:
                     # evaluate run_flag/reset
                     run_flag = bool(self.run_flag_port.Eval(self.robot_system_context))
-                    should_reset = is_cylinder_actuated or (
-                        run_flag and not prev_run_flag
-                    )
+                    should_reset = run_flag and not prev_run_flag
 
                 if should_reset:  # run flag switched from False to True
                     self.reset_environment()
