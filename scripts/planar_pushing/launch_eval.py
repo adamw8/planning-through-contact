@@ -57,16 +57,32 @@ def load_jobs_from_csv(csv_file):
         for row in reader:
             checkpoint_path = row.get("checkpoint_path", "").strip()
             run_dir = row.get("run_dir", "").strip()
-            if checkpoint_path and run_dir:
-                jobs.append((checkpoint_path, run_dir))
+
+            # Eval single checkpoint
+            if checkpoint_path.endswith(".ckpt"):
+                assert os.path.exists(
+                    checkpoint_path
+                ), f"Checkpoint file '{checkpoint_path}' does not exist."
+                checkpoint_file = os.path.basename(checkpoint_path)
+                if checkpoint_path and run_dir:
+                    jobs.append((checkpoint_path, f"{run_dir}/{checkpoint_file}"))
+            # Eval all checkpoints from the training run
+            else:
+                checkpoints_dir = os.path.join(checkpoint_path, "checkpoints")
+                for checkpoint_file in os.listdir(checkpoints_dir):
+                    if checkpoint_file.endswith(".ckpt"):
+                        checkpoint_path = os.path.join(checkpoints_dir, checkpoint_file)
+                        jobs.append(
+                            (checkpoint_path, os.path.join(run_dir, checkpoint_file))
+                        )
     return jobs
 
 
 def run_simulation(checkpoint_path, run_dir):
     """Run a single simulation with specified checkpoint and run directory."""
     command = BASE_COMMAND + [
-        f"diffusion_policy_config.checkpoint={checkpoint_path}",
-        f"hydra.run.dir={run_dir}",
+        f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
+        f'hydra.run.dir="{run_dir}"',
     ]
     command_str = " ".join(command)
 

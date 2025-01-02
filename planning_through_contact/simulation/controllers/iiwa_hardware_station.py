@@ -232,7 +232,7 @@ class IiwaHardwareStation(RobotSystemBase):
         # Inputs to diff IK
         builder.Connect(
             planar_translation_to_rigid_tranform.get_output_port(),
-            self._diff_ik.GetInputPort("X_AE_desired"),
+            self._diff_ik.GetInputPort("X_WE_desired"),
         )
 
         # builder.Connect(
