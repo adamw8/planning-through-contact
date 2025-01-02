@@ -5,6 +5,7 @@ import pickle
 import shutil
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 # Common arguments
 CONFIG_DIR = "config/sim_config"
@@ -144,11 +145,12 @@ def main():
                 return
 
     with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
-        futures = {
-            executor.submit(run_simulation, checkpoint, run_dir): (checkpoint, run_dir)
-            for checkpoint, run_dir in jobs
-        }
-
+        futures = {}
+        for checkpoint, run_dir in jobs:
+            future = executor.submit(run_simulation, checkpoint, run_dir)
+            futures[future] = (checkpoint, run_dir)
+            time.sleep(1) # try to avoid syncing issues (arbitrary_shape.sdf error)
+        
         for future in as_completed(futures):
             checkpoint, run_dir = futures[future]
             try:
