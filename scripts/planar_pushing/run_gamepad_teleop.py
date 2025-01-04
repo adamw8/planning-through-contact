@@ -350,7 +350,7 @@ class GamepadDataCollection:
         plt.close()
 
 
-def print_blue(text):
+def print_blue(text, end='\n'):
     print(f"\033[94m{text}\033[0m", end=end)
 
 

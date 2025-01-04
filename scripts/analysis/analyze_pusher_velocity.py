@@ -99,7 +99,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("dataset_path", type=str, help="Path to the dataset file.")
     args = parser.parse_args()
-    if args.dataset_path.endswith(".zarr"):
+    if args.dataset_path.endswith(".zarr") or args.dataset_path.endswith(".zarr/"):
         analyze_dataset(args.dataset_path)
     else:
         analyze_eval(args.dataset_path)

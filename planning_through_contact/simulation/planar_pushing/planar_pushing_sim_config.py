@@ -288,15 +288,28 @@ class PlanarPushingSimConfig:
                         and key in camera_config_attrs
                     ):
                         kwargs[key] = camera_config[key]
-
-                if (
-                    "light_direction" in camera_config
-                    or "cast_shadows" in camera_config
-                ):
-                    # Create renderer and set light direction
+                
+                # Recommended lighting config
+                create_renderer = False
+                if "lights" in camera_config:
+                    assert "light_direction" not in camera_config
+                    create_renderer = True
+                # Legacy lighting config
+                if "light_direction" in camera_config:
+                    assert "lights" not in camera_config
+                    create_renderer = True
+                if "cast_shadows" in camera_config:
+                    create_renderer = True
+                
+                # Create custom renderer
+                if create_renderer:
                     from pydrake.geometry import LightParameter, RenderEngineVtkParams
-
                     renderer_params = RenderEngineVtkParams()
+                    
+                    # Shadows
+                    if "cast_shadows" in camera_config and camera_config.cast_shadows:
+                        renderer_params.cast_shadows = True
+                        renderer_params.shadow_map_size = 512
 
                     # Background
                     if "background" in camera_config:
@@ -308,22 +321,32 @@ class PlanarPushingSimConfig:
                             ]
                         )
 
-                    # Light direction
-                    if "light_direction" in camera_config:
+                    # Recommended lighting config
+                    if "lights" in camera_config:                       
+                        # Lights
+                        lights = []
+                        for light in camera_config.lights:
+                            direction = np.array(light.direction)
+                            direction = direction / np.linalg.norm(direction)
+                            R, G, B = light.color[0], light.color[1], light.color[2]
+                            color = Rgba(R, G, B, 1.0)
+                            intensity = light.intensity
+                            lights.append(
+                                LightParameter(direction=direction, color=color, intensity=intensity)
+                            )
+                        renderer_params.lights = lights
+                    # Legacy lighting config
+                    elif "light_direction" in camera_config:
                         direction = np.array(camera_config["light_direction"])
                         direction = direction / np.linalg.norm(direction)
                         renderer_params.lights = [LightParameter(direction=direction)]
-
-                    # Shadows
-                    if "cast_shadows" in camera_config and camera_config.cast_shadows:
-                        renderer_params.cast_shadows = True
-                        renderer_params.shadow_map_size = 512
 
                     drake_camera_config = CameraConfig(
                         renderer_name=camera_config.name,
                         renderer_class=renderer_params,
                         **kwargs,
                     )
+                # Use default renderer
                 else:
                     drake_camera_config = CameraConfig(
                         **kwargs,
