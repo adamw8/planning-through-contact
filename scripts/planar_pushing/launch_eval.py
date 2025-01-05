@@ -4,8 +4,8 @@ import os
 import pickle
 import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Common arguments
 CONFIG_DIR = "config/sim_config"
@@ -14,7 +14,6 @@ BASE_COMMAND = [
     "python",
     "scripts/planar_pushing/run_sim_sim_eval.py",
     f"--config-dir={CONFIG_DIR}",
-    f"--config-name={CONFIG_NAME}",
 ]
 SUCCESS_RATES = {}
 
@@ -23,8 +22,8 @@ SUCCESS_RATES = {}
 # python launch_simulations.py --csv-path /path/to/jobs.csv --max-concurrent-jobs 8
 #
 # CSV file format:
-# checkpoint_path,run_dir
-# /path/to/checkpoint1.ckpt, data/test1
+# checkpoint_path,run_dir,config_name (optional)
+# /path/to/checkpoint1.ckpt, data/test1, custom_config.yaml
 # /path/to/checkpoint2.ckpt, data/test2
 # ---------------------------------------------------------
 
@@ -38,7 +37,7 @@ def parse_arguments():
         "--csv-path",
         type=str,
         required=True,
-        help="Path to the CSV file containing checkpoint paths and run directories.",
+        help="Path to the CSV file containing checkpoint paths, run directories, and optional config names.",
     )
     parser.add_argument(
         "--max-concurrent-jobs",
@@ -50,7 +49,7 @@ def parse_arguments():
 
 
 def load_jobs_from_csv(csv_file):
-    """Load checkpoint_path and run_dir from a CSV file."""
+    """Load checkpoint_path, run_dir, and optional config_name from a CSV file."""
     if not os.path.exists(csv_file):
         raise FileNotFoundError(f"CSV file '{csv_file}' does not exist.")
 
@@ -60,6 +59,12 @@ def load_jobs_from_csv(csv_file):
         for row in reader:
             checkpoint_path = row.get("checkpoint_path", "").strip()
             run_dir = row.get("run_dir", "").strip()
+            config_name = CONFIG_NAME
+            optional_config_name = row.get("config_name", "")
+            if optional_config_name is not None:
+                optional_config_name = optional_config_name.strip()
+                if optional_config_name != "":
+                    config_name = optional_config_name
 
             # Eval single checkpoint
             if checkpoint_path.endswith(".ckpt"):
@@ -68,7 +73,9 @@ def load_jobs_from_csv(csv_file):
                 ), f"Checkpoint file '{checkpoint_path}' does not exist."
                 checkpoint_file = os.path.basename(checkpoint_path)
                 if checkpoint_path and run_dir:
-                    jobs.append((checkpoint_path, f"{run_dir}/{checkpoint_file}"))
+                    jobs.append(
+                        (checkpoint_path, f"{run_dir}/{checkpoint_file}", config_name)
+                    )
             # Eval all checkpoints from the training run
             else:
                 checkpoints_dir = os.path.join(checkpoint_path, "checkpoints")
@@ -76,14 +83,19 @@ def load_jobs_from_csv(csv_file):
                     if checkpoint_file.endswith(".ckpt"):
                         checkpoint_path = os.path.join(checkpoints_dir, checkpoint_file)
                         jobs.append(
-                            (checkpoint_path, os.path.join(run_dir, checkpoint_file))
+                            (
+                                checkpoint_path,
+                                os.path.join(run_dir, checkpoint_file),
+                                config_name,
+                            )
                         )
     return jobs
 
 
-def run_simulation(checkpoint_path, run_dir):
-    """Run a single simulation with specified checkpoint and run directory."""
+def run_simulation(checkpoint_path, run_dir, config_name):
+    """Run a single simulation with specified checkpoint, run directory, and config name."""
     command = BASE_COMMAND + [
+        f"--config-name={config_name}",
         f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
         f'hydra.run.dir="{run_dir}"',
     ]
@@ -146,11 +158,11 @@ def main():
 
     with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
         futures = {}
-        for checkpoint, run_dir in jobs:
-            future = executor.submit(run_simulation, checkpoint, run_dir)
+        for checkpoint, run_dir, config_name in jobs:
+            future = executor.submit(run_simulation, checkpoint, run_dir, config_name)
             futures[future] = (checkpoint, run_dir)
-            time.sleep(2) # try to avoid syncing issues (arbitrary_shape.sdf error)
-        
+            time.sleep(2)  # try to avoid syncing issues (arbitrary_shape.sdf error)
+
         for future in as_completed(futures):
             checkpoint, run_dir = futures[future]
             try:
