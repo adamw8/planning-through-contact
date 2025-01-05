@@ -149,7 +149,7 @@ def main():
         for checkpoint, run_dir in jobs:
             future = executor.submit(run_simulation, checkpoint, run_dir)
             futures[future] = (checkpoint, run_dir)
-            time.sleep(1) # try to avoid syncing issues (arbitrary_shape.sdf error)
+            time.sleep(2) # try to avoid syncing issues (arbitrary_shape.sdf error)
         
         for future in as_completed(futures):
             checkpoint, run_dir = futures[future]
