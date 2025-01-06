@@ -11,6 +11,7 @@ import dill
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
+import omegaconf
 
 # Diffusion Policy imports
 import torch
@@ -55,10 +56,8 @@ class DiffusionPolicyController(LeafSystem):
         self._delay = delay
         self._debug = debug
         self._device = torch.device(device)
+        self._cfg_overrides = cfg_overrides
         self._load_policy_from_checkpoint(self._checkpoint)
-        # Override diffusion policy config
-        for key, value in cfg_overrides.items():
-            self._cfg[key] = value
 
         # get parameters
         self._obs_horizon = self._cfg.n_obs_steps
@@ -137,6 +136,15 @@ class DiffusionPolicyController(LeafSystem):
         # load checkpoint
         payload = torch.load(open(checkpoint, "rb"), pickle_module=dill)
         self._cfg = payload["cfg"]
+
+        # Override diffusion policy config
+        for key, value in self._cfg_overrides.items():
+            if isinstance(value, omegaconf.dictconfig.DictConfig):
+                for k, v in value.items():
+                    self._cfg[key][k] = v
+            else:
+                self._cfg[key] = value
+
         # self._cfg.training.device = self._device
         cls = hydra.utils.get_class(self._cfg._target_)
         workspace: BaseWorkspace

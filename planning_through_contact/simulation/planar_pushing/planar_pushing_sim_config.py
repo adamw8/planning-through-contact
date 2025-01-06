@@ -57,6 +57,7 @@ class MultiRunConfig:
         evaluate_final_slider_rotation: bool = True,
         success_criteria: str = "tolerance",
         dataset_path: str = None,
+        convex_hull_scale: float = 1.0,
         slider_physical_properties: PhysicalProperties = None,
         pre_compute_initial_conditions: bool = True,
         num_trials_to_record: int = 0,
@@ -104,6 +105,7 @@ class MultiRunConfig:
         self.evaluate_final_slider_rotation = evaluate_final_slider_rotation
         self.success_criteria = success_criteria
         self.dataset_path = dataset_path
+        self.convex_hull_scale = convex_hull_scale
         self.num_trials_to_record = num_trials_to_record
 
     def __str__(self):
@@ -138,6 +140,7 @@ class MultiRunConfig:
             and self.pre_compute_initial_conditions
             == other.pre_compute_initial_conditions
             and self.num_trials_to_record == other.num_trials_to_record
+            and self.convex_hull_scale == other.convex_hull_scale
         )
 
 
@@ -288,7 +291,7 @@ class PlanarPushingSimConfig:
                         and key in camera_config_attrs
                     ):
                         kwargs[key] = camera_config[key]
-                
+
                 # Recommended lighting config
                 create_renderer = False
                 if "lights" in camera_config:
@@ -300,12 +303,13 @@ class PlanarPushingSimConfig:
                     create_renderer = True
                 if "cast_shadows" in camera_config:
                     create_renderer = True
-                
+
                 # Create custom renderer
                 if create_renderer:
                     from pydrake.geometry import LightParameter, RenderEngineVtkParams
+
                     renderer_params = RenderEngineVtkParams()
-                    
+
                     # Shadows
                     if "cast_shadows" in camera_config and camera_config.cast_shadows:
                         renderer_params.cast_shadows = True
@@ -322,7 +326,7 @@ class PlanarPushingSimConfig:
                         )
 
                     # Recommended lighting config
-                    if "lights" in camera_config:                       
+                    if "lights" in camera_config:
                         # Lights
                         lights = []
                         for light in camera_config.lights:
@@ -332,7 +336,11 @@ class PlanarPushingSimConfig:
                             color = Rgba(R, G, B, 1.0)
                             intensity = light.intensity
                             lights.append(
-                                LightParameter(direction=direction, color=color, intensity=intensity)
+                                LightParameter(
+                                    direction=direction,
+                                    color=color,
+                                    intensity=intensity,
+                                )
                             )
                         renderer_params.lights = lights
                     # Legacy lighting config

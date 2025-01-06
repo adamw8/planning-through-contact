@@ -147,8 +147,16 @@ class SimSimEval:
 
         if self.success_criteria == "convex_hull":
             dataset_path = self.multi_run_config.dataset_path
-            self.pusher_goal_convex_hull = self.get_pusher_goal_polyhedron(dataset_path)
-            self.slider_goal_convex_hull = self.get_slider_goal_polyhedron(dataset_path)
+            convex_hull = self.get_pusher_goal_polyhedron(dataset_path)
+            self.pusher_goal_convex_hull = convex_hull.Scale(
+                scale=self.multi_run_config.convex_hull_scale,
+                center=self.pusher_start_pose.vector().flatten()[:2],
+            )
+            convex_hull = self.get_slider_goal_polyhedron(dataset_path)
+            self.slider_goal_convex_hull = convex_hull.Scale(
+                scale=self.multi_run_config.convex_hull_scale,
+                center=self.slider_goal_pose.vector().flatten(),
+            )
 
         # Delete log file if it already exists
         if os.path.exists(os.path.join(self.output_dir, "summary.txt")):
@@ -312,9 +320,9 @@ class SimSimEval:
         pusher_pose = self.get_pusher_pose()
         pusher_goal_pose = self.sim_config.pusher_start_pose
         pusher_error = pusher_goal_pose.vector() - pusher_pose.vector()
-        reached_goal_pusher_position = (
-            np.linalg.norm(pusher_error[:2]) <= 1.5 * trans_tol
-        )
+        # Note: pusher goal criterion is intentionally very lenient
+        # since the teleoperator (me) did a poor job as well, oops :) oops
+        reached_goal_pusher_position = np.linalg.norm(pusher_error[:2]) <= 0.04
 
         if not reached_goal_slider_position:
             return False
@@ -343,7 +351,6 @@ class SimSimEval:
         pusher_success = self.is_contained(
             pusher_position, self.pusher_goal_convex_hull
         )
-        print(f"Slider success: {slider_success}, Pusher success: {pusher_success}")
         return slider_success and pusher_success
 
     def check_failure(self, t, last_reset_time):
