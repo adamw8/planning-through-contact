@@ -8,7 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Common arguments
-CONFIG_DIR = "config/sim_config"
+CONFIG_DIR = "config/sim_config/sim_sim"
 CONFIG_NAME = "gamepad_teleop.yaml"
 BASE_COMMAND = [
     "python",
@@ -172,10 +172,11 @@ def main():
                     f"❌ Error in job with checkpoint: {checkpoint}, run_dir: {run_dir}\n{e}"
                 )
 
-    # print success rates
+    # Print success rates sorted by keys
     print("\n" + "=" * 50)
     print("=== SUCCESS RATES ===")
-    for run_dir, success_rate in SUCCESS_RATES.items():
+    for run_dir in sorted(SUCCESS_RATES.keys()):
+        success_rate = SUCCESS_RATES[run_dir]
         print(f"{run_dir}: {success_rate}")
     print("=" * 50 + "\n")
 

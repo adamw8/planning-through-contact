@@ -163,6 +163,10 @@ class GamepadDataCollection:
                 self.environment._desired_position_source.set_translation_scale(
                     0.5 * translation_scale
                 )
+            elif button_values["LT"]:
+                self.environment._desired_position_source.set_translation_scale(
+                    3 * translation_scale
+                )
             else:
                 self.environment._desired_position_source.set_translation_scale(
                     translation_scale
@@ -350,7 +354,7 @@ class GamepadDataCollection:
         plt.close()
 
 
-def print_blue(text, end='\n'):
+def print_blue(text, end="\n"):
     print(f"\033[94m{text}\033[0m", end=end)
 
 
