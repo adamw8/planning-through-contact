@@ -158,7 +158,9 @@ def main():
 
     with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
         futures = {}
+        # print number of remaining jobs
         for checkpoint, run_dir, config_name in jobs:
+            print(f"Remaining jobs: {len(jobs) - len(futures)}")
             future = executor.submit(run_simulation, checkpoint, run_dir, config_name)
             futures[future] = (checkpoint, run_dir)
             time.sleep(2)  # try to avoid syncing issues (arbitrary_shape.sdf error)
