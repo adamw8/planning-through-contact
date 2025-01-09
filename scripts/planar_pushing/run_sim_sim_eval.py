@@ -573,6 +573,31 @@ class SimSimEval:
             f.write("\n")
 
     def save_summary(self, summary):
+        if len(summary["successful_trials"]) == 0:
+            average_successful_trans_error = "N/A"
+            average_successful_rot_error = "N/A"
+        else:
+            successful_translation_errors = []
+            successful_rotation_errors = []
+            for trial_idx in summary["successful_trials"]:
+                successful_translation_errors.append(
+                    np.linalg.norm(
+                        summary["final_error"][trial_idx]["slider_error"][:2]
+                    )
+                )
+                successful_rotation_errors.append(
+                    np.abs(summary["final_error"][trial_idx]["slider_error"][2])
+                )
+
+            average_succesful_trans_error = np.mean(successful_translation_errors)
+            average_succesful_rot_error = np.mean(successful_rotation_errors)
+            average_successful_trans_error = (
+                f"{100*average_succesful_trans_error:.2f}cm"
+            )
+            average_successful_rot_error = (
+                f"{np.rad2deg(average_succesful_rot_error):.2f}°"
+            )
+
         summary_path = os.path.join(self.output_dir, "summary.pkl")
         with open(summary_path, "wb") as f:
             pickle.dump(summary, f)
@@ -590,6 +615,12 @@ class SimSimEval:
             f.write(f"Total successful trials: {len(summary['successful_trials'])}\n")
             f.write(
                 f"Success rate: {len(summary['successful_trials']) / self.multi_run_config.num_runs:.6f}\n"
+            )
+            f.write(
+                f"Average successful translation error: {average_successful_trans_error}\n"
+            )
+            f.write(
+                f"Average successful rotation error: {average_successful_rot_error}\n"
             )
             f.write(f"Total time (sim): {summary['total_eval_sim_time']:.2f}\n")
             f.write(f"Total time (wall): {summary['total_eval_wall_time']:.2f}\n\n")

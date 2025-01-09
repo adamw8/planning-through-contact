@@ -46,7 +46,8 @@ def load_trajectories_from_eval(directory, movement_threshold=0.01):
         pusher_traj = np.stack([pusher_actual.x, pusher_actual.y], axis=1)
 
         # Determine the starting index for significant movement
-        start_idx = detect_movement_start(pusher_traj, threshold=movement_threshold)
+        # start_idx = detect_movement_start(pusher_traj, threshold=movement_threshold)
+        start_idx = 0
 
         # Trim both trajectories based on the detected start index
         if start_idx >= 0:
@@ -59,7 +60,7 @@ def load_trajectories_from_eval(directory, movement_threshold=0.01):
     return trajectories
 
 
-def load_trajectory_from_zarr(zarr_path, movement_threshold=0.01):
+def load_trajectory_from_zarr(zarr_path, movement_threshold=0.001):
     root = zarr.open(zarr_path)
     pusher_state = root["data/state"]
     slider_state = root["data/slider_state"]

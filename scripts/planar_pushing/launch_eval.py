@@ -92,7 +92,7 @@ def load_jobs_from_csv(csv_file):
     return jobs
 
 
-def run_simulation(checkpoint_path, run_dir, config_name):
+def run_simulation(checkpoint_path, run_dir, config_name, remaining_jobs=None):
     """Run a single simulation with specified checkpoint, run directory, and config name."""
     command = BASE_COMMAND + [
         f"--config-name={config_name}",
@@ -101,6 +101,7 @@ def run_simulation(checkpoint_path, run_dir, config_name):
     ]
     command_str = " ".join(command)
 
+    print("Remaining jobs: ", remaining_jobs)
     print("\n" + "=" * 50)
     print(f"=== JOB START: {run_dir} ===")
     print(command_str)
@@ -160,8 +161,10 @@ def main():
         futures = {}
         # print number of remaining jobs
         for checkpoint, run_dir, config_name in jobs:
-            print(f"Remaining jobs: {len(jobs) - len(futures)}")
-            future = executor.submit(run_simulation, checkpoint, run_dir, config_name)
+            remaining_jobs = len(jobs) - len(futures)
+            future = executor.submit(
+                run_simulation, checkpoint, run_dir, config_name, remaining_jobs
+            )
             futures[future] = (checkpoint, run_dir)
             time.sleep(2)  # try to avoid syncing issues (arbitrary_shape.sdf error)
 
