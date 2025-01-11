@@ -1,4 +1,5 @@
 import argparse
+import copy
 import csv
 import os
 import pickle
@@ -92,6 +93,31 @@ def load_jobs_from_csv(csv_file):
     return jobs
 
 
+def get_best_success_rates(success_rates):
+    """
+    Extract the best success rate for each experiment.
+
+    Args:
+        success_rates (dict): Dictionary with keys as checkpoint paths and values as success rates.
+
+    Returns:
+        dict: Dictionary with the best success rate for each experiment.
+    """
+    grouped_experiments = {}
+    for key, value in success_rates.items():
+        experiment = os.path.dirname(key)
+        if experiment not in grouped_experiments:
+            grouped_experiments[experiment] = []
+        grouped_experiments[experiment].append((key, value))
+
+    best_sr = {}
+    for experiment, checkpoints in grouped_experiments.items():
+        best_checkpoint, best_rate = max(checkpoints, key=lambda x: x[1])
+        best_sr[best_checkpoint] = best_rate
+
+    return best_sr
+
+
 def run_simulation(checkpoint_path, run_dir, config_name, remaining_jobs=None):
     """Run a single simulation with specified checkpoint, run directory, and config name."""
     command = BASE_COMMAND + [
@@ -182,6 +208,15 @@ def main():
     print("=== SUCCESS RATES ===")
     for run_dir in sorted(SUCCESS_RATES.keys()):
         success_rate = SUCCESS_RATES[run_dir]
+        print(f"{run_dir}: {success_rate}")
+    print("=" * 50 + "\n")
+
+    # Print best success rate for each experiment
+    best_sr = get_best_success_rates(copy.deepcopy(SUCCESS_RATES))
+    print("\n" + "=" * 50)
+    print("=== BEST SUCCESS RATES ===")
+    for run_dir in sorted(best_sr.keys()):
+        success_rate = best_sr[run_dir]
         print(f"{run_dir}: {success_rate}")
     print("=" * 50 + "\n")
 

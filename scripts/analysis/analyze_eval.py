@@ -86,6 +86,39 @@ def compute_average_successful_trial_time(summary):
     return average_successful_trial_time
 
 
+def is_success(final_slider_error, trans_tol, rot_tol):
+    """
+    Check if the final slider error is within the specified tolerances.
+
+    Args:
+        final_slider_error (np.ndarray): Final slider error (x, y, theta).
+        trans_tol (float): Translation tolerance.
+        rot_tol (float): Rotation tolerance.
+    """
+    position_error = np.linalg.norm(final_slider_error[:2])
+    rotation_error = np.abs(final_slider_error[2])
+    return position_error <= trans_tol and rotation_error <= rot_tol
+
+
+def success_rate(summary, trans_tol, rot_tol):
+    """
+    Compute the success rate from a summary dictionary.
+
+    Args:
+        summary (dictionary): summary dictionary
+        trans_tol (float): Translation tolerance
+        rot_tol (float): Rotation tolerance
+    """
+
+    final_errors = summary["final_error"]
+    successful_trials = 0
+    for final_error in final_errors:
+        slider_error = final_error["slider_error"]
+        if is_success(slider_error, trans_tol, rot_tol):
+            successful_trials += 1
+    return successful_trials / len(final_errors)
+
+
 # Plotting
 
 
@@ -274,6 +307,56 @@ def plot_average_absolute_error(succ_slider_traj, succ_targets, M=100):
     plt.show()
 
 
+def plot_success_rate_vs_tolerance(summary, trans_tol_range, rot_tol_range):
+    """
+    Plot the success rate vs translation and rotation tolerances.
+
+    Args:
+        summary (dictionary): summary dictionary
+        trans_tol_range (list): Translation tolerance range
+        rot_tol_range (list): Rotation tolerance range
+    """
+
+    trans_tols, rot_tols = np.meshgrid(
+        np.linspace(trans_tol_range[0], trans_tol_range[1], 20),
+        np.linspace(rot_tol_range[0], rot_tol_range[1], 20),
+    )
+    m, n = trans_tols.shape
+
+    success_rates = np.zeros_like(trans_tols)
+    for i in range(m):
+        for j in range(n):
+            success_rates[i, j] = success_rate(
+                summary, trans_tols[i, j], rot_tols[i, j]
+            )
+
+    plt.figure(figsize=(8, 6))
+    heatmap = plt.pcolormesh(
+        trans_tols, rot_tols, success_rates, shading="auto", cmap="viridis"
+    )
+    plt.colorbar(heatmap, label="Success Rate")
+    plt.xlabel("Translation Tolerance")
+    plt.ylabel("Rotation Tolerance")
+    plt.title("Success Rate vs. Translation and Rotation Tolerances")
+
+    # Annotate each cell with its value
+    for i in range(m - 1):
+        for j in range(n - 1):
+            cell_x = trans_tols[i, j] + (trans_tols[i, j + 1] - trans_tols[i, j]) / 2
+            cell_y = rot_tols[i, j] + (rot_tols[i + 1, j] - rot_tols[i, j]) / 2
+            plt.text(
+                cell_x,
+                cell_y,
+                f"{success_rates[i, j]:.2f}",
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=6,
+            )
+
+    plt.show()
+
+
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(
@@ -319,6 +402,7 @@ def main():
     print("=" * 50 + "\n")
 
     # Plots
+    plot_success_rate_vs_tolerance(summary, [0.0, 0.02], [0.0, 0.1])
     plot_success_rate(summary)
     plot_average_absolute_error(succ_slider_traj, succ_targets, 100)
 
