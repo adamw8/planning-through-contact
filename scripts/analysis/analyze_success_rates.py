@@ -242,7 +242,7 @@ def compute_baseline_results(baseline_dir, trans_tol, rot_tol):
 
 if __name__ == "__main__":
     num_real = 50
-    num_sim = [500, 2000, 8000]
+    num_sim = [500, 2000, 4000, 8000]
     eval_dir = "eval/sim_sim/cotrain_carbon"
     baseline_dir = f"eval/sim_sim/baseline_carbon/{num_real}"
     data_mixtures = [f"{num_real}_{num}" for num in num_sim]

@@ -64,7 +64,9 @@ class DiffIKSystem(LeafSystem):
             return
 
         # Diff IK failed: try optimization-based IK
-        ik_result = self._attempt_to_solve_ik(rigid_transform, disregard_angle=False)
+        ik_result = self._attempt_to_solve_ik(
+            rigid_transform, state[: self._plant.num_positions()]
+        )
         if ik_result.is_success():
             output.SetFromVector(ik_result.GetSolution())
             self._consequtive_ik_fails = 0
@@ -98,12 +100,12 @@ class DiffIKSystem(LeafSystem):
         param.set_joint_velocity_limits(
             (self._plant.GetVelocityLowerLimits(), self._plant.GetVelocityUpperLimits())
         )
-        param.set_joint_acceleration_limits(
-            (
-                self._plant.GetAccelerationLowerLimits(),
-                self._plant.GetAccelerationUpperLimits(),
-            )
-        )
+        # param.set_joint_acceleration_limits(
+        #     (
+        #         self._plant.GetAccelerationLowerLimits(),
+        #         self._plant.GetAccelerationUpperLimits(),
+        #     )
+        # )
         param.set_maximum_scaling_to_report_stuck(1e-5)
 
         return param
@@ -111,17 +113,18 @@ class DiffIKSystem(LeafSystem):
     def _attempt_to_solve_ik(
         self,
         pose: RigidTransform,
+        prev_q: np.ndarray,
         disregard_angle: bool = False,
     ):
         # ik solve with default parameters
-        ik_result = self._solve_ik(pose, disregard_angle, eps=1e-3)
+        ik_result = self._solve_ik(pose, prev_q, disregard_angle, eps=1e-3)
         if ik_result.is_success():
             return ik_result
 
-        # increase eps
-        ik_result = self._solve_ik(pose, disregard_angle, eps=1e-2)
-        if ik_result.is_success():
-            return ik_result
+        # # increase eps
+        # ik_result = self._solve_ik(pose, prev_q, disregard_angle, eps=1e-2)
+        # if ik_result.is_success():
+        #     return ik_result
 
         # all ik attempts failed
         return ik_result
@@ -136,7 +139,13 @@ class DiffIKSystem(LeafSystem):
             self._paramters,
         )
 
-    def _solve_ik(self, pose: RigidTransform, disregard_angle: bool = False, eps=1e-3):
+    def _solve_ik(
+        self,
+        pose: RigidTransform,
+        prev_q: np.ndarray,
+        disregard_angle: bool = False,
+        eps=1e-3,
+    ):
         # Plant needs to be just the robot without other objects
         # Need to create a new context that the IK can use for solving the problem
 
@@ -174,7 +183,8 @@ class DiffIKSystem(LeafSystem):
         q = ik.q()
 
         q0 = self._default_joint_positions
-        prog.AddQuadraticErrorCost(np.identity(len(q)), q0, q)
-        prog.SetInitialGuess(q, q0)
+        # prog.AddQuadraticErrorCost(np.identity(len(q)), q0, q)
+        prog.AddQuadraticErrorCost(1000000 * np.identity(len(q)), prev_q, q)
+        prog.SetInitialGuess(q, prev_q)
 
         return Solve(ik.prog())

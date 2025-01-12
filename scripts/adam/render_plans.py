@@ -23,9 +23,9 @@ def run_data_generation_script(config_dir, config_name, plans_dir):
 start_index = 0
 end_index = 59
 
-config_dir = "config/sim_config"
-config_name = "real_iiwa_sim_config.yaml"
-plans_root = "trajectories/sim_tee_data_large_0"
+config_dir = "config/sim_config/sim_sim"
+config_name = "gamepad_teleop_carbon.yaml"
+plans_root = "trajectories/sim_tee_data"
 
 # ----------------------------------------------------------
 
