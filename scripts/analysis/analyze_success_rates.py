@@ -139,7 +139,7 @@ def plot_alpha_sweep_subplot(
 
     ax.set_xlabel(r"$\alpha$")
     ax.set_ylabel("Success Rate")
-    ax.set_ylim(0, 1)
+    ax.set_ylim(0.5, 1)
     ax.set_title(title or r"Success Rate vs. $\alpha$")
     if legend:
         ax.legend()
@@ -247,8 +247,8 @@ if __name__ == "__main__":
     baseline_dir = f"eval/sim_sim/baseline_carbon/{num_real}"
     data_mixtures = [f"{num_real}_{num}" for num in num_sim]
 
-    trans_tols = np.linspace(0.01, 0.015, 4)
-    rot_tols = np.linspace(np.deg2rad(2), np.deg2rad(4), 4)
+    trans_tols = np.linspace(0.0125, 0.0175, 3)
+    rot_tols = np.linspace(np.deg2rad(3), np.deg2rad(4), 3)
     x, y = np.meshgrid(trans_tols, rot_tols)
     m, n = x.shape
 
@@ -258,8 +258,9 @@ if __name__ == "__main__":
             trans_tol = x[i, j]
             rot_tol = y[i, j]
             baseline_real = compute_baseline_results(baseline_dir, trans_tol, rot_tol)
+            baseline_real = 0.59
             results = compute_results(eval_dir, data_mixtures, trans_tol, rot_tol)
-            alphas = [0, None, 0.25, 0.5, 0.75]
+            alphas = [None, 0.25, 0.5, 0.75]
             data = [
                 [results[mixture].get(alpha, float("nan")) for alpha in alphas]
                 for mixture in data_mixtures

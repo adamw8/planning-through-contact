@@ -1,8 +1,11 @@
 import os
+import time
 from datetime import datetime
 
 
-def run_data_generation_script(config_dir, config_name, plans_dir):
+def run_data_generation_script(
+    config_dir, config_name, plans_dir, suppress_output=False
+):
     seed = datetime.now().timestamp()
     command = (
         f"python scripts/planar_pushing/diffusion_policy/run_data_generation.py "
@@ -12,6 +15,9 @@ def run_data_generation_script(config_dir, config_name, plans_dir):
         f"data_collection_config.plan_config.seed={int(seed) % 1000} "
         f"multi_run_config.seed={int(seed) % 1000} "
     )
+
+    if suppress_output:
+        command += " > /dev/null 2>&1"
 
     os.system(command)
 
@@ -27,6 +33,8 @@ config_dir = "config/sim_config/sim_sim"
 config_name = "gamepad_teleop_carbon.yaml"
 plans_root = "trajectories/sim_tee_data"
 
+suppress_output = True
+
 # ----------------------------------------------------------
 
 if __name__ == "__main__":
@@ -34,4 +42,8 @@ if __name__ == "__main__":
     for i in range(start_index, end_index + 1):
         plans_dir = f"{plans_root}/run_{i}"
         print(plans_dir)
-        run_data_generation_script(config_dir, config_name, plans_dir)
+        start = time.time()
+        run_data_generation_script(config_dir, config_name, plans_dir, suppress_output)
+        print(
+            f"Finished rendering plans for run {i} in {time.time() - start:.2f} seconds.\n"
+        )

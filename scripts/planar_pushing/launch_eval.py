@@ -166,6 +166,12 @@ def main():
         print("No valid jobs found in the CSV file. Please check the file.")
         return
 
+    # Sure there are no duplicate logging directories in the jobs list
+    logging_dirs = [job[1] for job in jobs]
+    assert len(logging_dirs) == len(
+        set(logging_dirs)
+    ), "Duplicate logging directories found in the jobs list."
+
     print(f"Loaded {len(jobs)} jobs from {csv_file}.")
     print(f"Running with up to {max_concurrent_jobs} concurrent jobs.\n")
 
