@@ -269,6 +269,13 @@ class DiffusionPolicyController(LeafSystem):
             "target": target_tensor.to(self._device),  # 1, D_t
         }
 
+        # Note: Assuming sim is the first element in one hot encoding
+        if self._policy.one_hot_encoding_dim > 0:
+            data["one_hot_encoding"] = torch.zeros(
+                1, self._policy.one_hot_encoding_dim
+            ).to(self._device)
+            data["one_hot_encoding"][0, 0] = 1
+
         # Load images into data dict
         for camera, image_deque in image_deque_dict.items():
             img_tensor = torch.cat(
