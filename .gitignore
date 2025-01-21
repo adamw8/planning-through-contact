@@ -14,6 +14,9 @@ multirun/
 eval/
 config/launch_eval.txt
 planning_through_contact/simulation/models/arbitrary_shape.sdf
+planning_through_contact/simulation/models/small_table_hydroelastic_randomized.urdf
+planning_through_contact/simulation/models/pusher_floating_hydroelastic_randomized.sdf
+
 
 # Vim
 *.swp

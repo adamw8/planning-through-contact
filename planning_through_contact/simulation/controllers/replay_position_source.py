@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from pydrake.all import Demultiplexer, DiagramBuilder, ZeroOrderHold
 from pydrake.systems.framework import Context, LeafSystem
@@ -9,6 +11,7 @@ from planning_through_contact.geometry.planar.planar_pushing_trajectory import (
 from planning_through_contact.simulation.controllers.desired_planar_position_source_base import (
     DesiredPlanarPositionSourceBase,
 )
+from planning_through_contact.visualize.analysis import CombinedPlanarPushingLogs
 
 
 class ReplayPublisher(LeafSystem):
@@ -19,10 +22,21 @@ class ReplayPublisher(LeafSystem):
     relevant information for data collection.
     """
 
-    def __init__(self, traj: PlanarPushingTrajectory, delay: float):
+    def __init__(
+        self,
+        traj: Union[PlanarPushingTrajectory, CombinedPlanarPushingLogs],
+        delay: float,
+    ):
         super().__init__()
         self.traj = traj
         self.delay = delay
+
+        # CombinedPlanarPushingLog member variables
+        if isinstance(self.traj, CombinedPlanarPushingLogs):
+            self.pusher_time_index = 0
+            self.slider_time_index = 0
+            self.pusher_traj = self.traj.pusher_actual
+            self.slider_traj = self.traj.slider_actual
 
         # Declare output ports
         self.DeclareVectorOutputPort(
@@ -60,14 +74,56 @@ class ReplayPublisher(LeafSystem):
         planar_pose = PlanarPose(p_WB[0].item(), p_WB[1].item(), theta)
         return planar_pose
 
+    def _get_pusher_pose_from_traj(self, t: float) -> PlanarPose:
+        return self._calc_pusher_pose(self._get_rel_t(t))
+
+    def _get_slider_pose_from_traj(self, t: float) -> PlanarPose:
+        return self._calc_slider_pose(self._get_rel_t(t))
+
+    def _get_pusher_pose_from_log(self, t: float) -> PlanarPose:
+        times = self.pusher_traj.t
+        while (
+            self.pusher_time_index < len(times) - 1
+            and times[self.pusher_time_index] < t
+        ):
+            self.pusher_time_index += 1
+        return PlanarPose(
+            self.pusher_traj.x[self.pusher_time_index],
+            self.pusher_traj.y[self.pusher_time_index],
+            self.pusher_traj.theta[self.pusher_time_index],
+        )
+
+    def _get_slider_pose_from_log(self, t: float) -> PlanarPose:
+        times = self.slider_traj.t
+        while (
+            self.slider_time_index < len(times) - 1
+            and times[self.slider_time_index] < t
+        ):
+            self.slider_time_index += 1
+        return PlanarPose(
+            self.slider_traj.x[self.slider_time_index],
+            self.slider_traj.y[self.slider_time_index],
+            self.slider_traj.theta[self.slider_time_index],
+        )
+
     def DoCalcDesiredPusherPlanarPoseVectorOutput(self, context: Context, output):
-        curr_t = context.get_time()
-        pusher_pose = self._calc_pusher_pose(self._get_rel_t(curr_t))
+        t = context.get_time()
+        if isinstance(self.traj, CombinedPlanarPushingLogs):
+            pusher_pose = self._get_pusher_pose_from_log(t)
+        elif isinstance(self.traj, PlanarPushingTrajectory):
+            pusher_pose = self._get_pusher_pose_from_traj(t)
+        else:
+            raise ValueError("Invalid traj type")
         output.SetFromVector(pusher_pose.vector())
 
     def DoCalcDesiredSliderPlanarPoseVectorOutput(self, context: Context, output):
-        curr_t = context.get_time()
-        slider_pose = self._calc_slider_pose(self._get_rel_t(curr_t))
+        t = context.get_time()
+        if isinstance(self.traj, CombinedPlanarPushingLogs):
+            slider_pose = self._get_slider_pose_from_log(t)
+        elif isinstance(self.traj, PlanarPushingTrajectory):
+            slider_pose = self._get_slider_pose_from_traj(t)
+        else:
+            raise ValueError("Invalid traj type")
         output.SetFromVector(slider_pose.vector())
 
 

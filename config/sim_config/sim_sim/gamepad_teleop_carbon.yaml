@@ -134,7 +134,7 @@ multi_run_config:
   dataset_path: /home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data.zarr
   slider_physical_properties: ${physical_properties}
   pre_compute_initial_conditions: false
-  num_trials_to_record: 100
+  num_trials_to_record: 20
 
 ## Robot specific configs
 # sim_config
@@ -152,12 +152,12 @@ joint_velocity_limit_factor: 1.0 # .inf
 data_collection_config:
   _target_: planning_through_contact.simulation.environments.data_collection_table_environment.DataCollectionConfig
   generate_plans: false
-  render_plans: false
-  convert_to_zarr: true
+  render_plans: true
+  convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   # plans_dir: 'trajectories/cotrain_data_v2'
-  plans_dir: 'trajectories/sim_tee_data/run_0'
-  rendered_plans_dir: 'trajectories_rendered/sim_tee_data_carbon'
+  plans_dir: 'trajectories/gamepad_teleop_carbon'
+  rendered_plans_dir: 'trajectories_rendered/gamepad_teleop_carbon_test'
   zarr_path: 'trajectories_rendered/sim_tee_data_carbon.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024

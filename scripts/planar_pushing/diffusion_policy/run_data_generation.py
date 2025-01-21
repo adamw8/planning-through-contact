@@ -53,6 +53,10 @@ from planning_through_contact.simulation.sim_utils import (
     get_slider_sdf_path,
     models_folder,
 )
+from planning_through_contact.visualize.analysis import (
+    CombinedPlanarPushingLogs,
+    PlanarPushingLog,
+)
 from planning_through_contact.visualize.colors import COLORS
 from planning_through_contact.visualize.planar_pushing import make_traj_figure
 
@@ -277,10 +281,16 @@ def render_plans(
         create_arbitrary_shape_sdf_file(cfg, sim_config)
 
     plans = []
-    for plan_dir in os.listdir(data_collection_config.plans_dir):
+    plan_dirs = list(os.listdir(data_collection_config.plans_dir))
+    for plan_dir in plan_dirs:
         if os.path.isdir(f"{data_collection_config.plans_dir}/{plan_dir}"):
             plan_path = f"{data_collection_config.plans_dir}/{plan_dir}/trajectory/traj_rounded.pkl"
-            plans.append(PlanarPushingTrajectory.load(plan_path))
+            with open(plan_path, "rb") as f:
+                plan = pickle.load(f)
+            if isinstance(plan, CombinedPlanarPushingLogs):
+                plans.append(plan)
+            else:
+                plans.append(PlanarPushingTrajectory.load(plan_path))
 
     meshcat = StartMeshcat()
     for plan in tqdm(plans):
@@ -334,10 +344,13 @@ def simulate_plan(
 
     recording_name = f"recording.html" if save_recording else None
     environment.export_diagram("data_collection_table_environment.pdf")
-    environment.simulate(
-        traj.end_time + sim_config.delay_before_execution + 0.5,
-        recording_file=recording_name,
-    )
+
+    end_time = 0.5
+    if isinstance(traj, PlanarPushingTrajectory):
+        end_time += traj.end_time + sim_config.delay_before_execution
+    elif isinstance(traj, CombinedPlanarPushingLogs):
+        end_time += traj.pusher_desired.t[-1]
+    environment.simulate(end_time, recording_file=recording_name)
     environment.resize_saved_images()
 
 
