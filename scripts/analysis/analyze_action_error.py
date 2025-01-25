@@ -139,7 +139,9 @@ class AnalyzeActionError:
 
         mses = np.zeros((0, self.horizon))
         episode_start = 0
-        for i in range(min(num_traj, len(episode_ends))):
+        offset = 0
+
+        for i in range(offset, min(num_traj + offset, len(episode_ends))):
             episode_end = episode_ends[i]
             pusher_traj = pusher_state[episode_start:episode_end]
             slider_traj = slider_state[episode_start:episode_end]
@@ -264,7 +266,8 @@ class AnalyzeActionError:
         )
 
         # generate temporary directory
-        temp_dir = "./analyze_action_error_images"
+        zp = self.zarr_path.split("/")[-1]
+        temp_dir = f"./analyze_action_error_images_{zp}"
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
         os.makedirs(temp_dir)
@@ -422,14 +425,14 @@ def main(cfg: OmegaConf):
     com_y_shifts = [0.03, -0.03, -0.06]
 
     # # gamepad
-    zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr"
-    sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
-    mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_gamepad.png")
-    mse_per_level.append(mse)
-    with open("eval/action_mse/action_mse_gamepad.pkl", "wb") as f:
-        pickle.dump(mse, f)
-    with open("eval/action_mse/action_std_gamepad.pkl", "wb") as f:
-        pickle.dump(std, f)
+    # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr"
+    # sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
+    # mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_gamepad.png")
+    # mse_per_level.append(mse)
+    # with open("eval/action_mse/action_mse_gamepad.pkl", "wb") as f:
+    #     pickle.dump(mse, f)
+    # with open("eval/action_mse/action_std_gamepad.pkl", "wb") as f:
+    #     pickle.dump(std, f)
 
     # # level 0
     # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_tee_data_large.zarr"
@@ -483,7 +486,7 @@ def main(cfg: OmegaConf):
     #     pickle.dump(std, f)
 
     # num_traj = 50
-    # level=1
+    # level=3
     # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_{level}.zarr"
     # # need to shift com for physics shift rendering
     # # cfg.physical_properties.center_of_mass = com[level-1]
@@ -494,7 +497,7 @@ def main(cfg: OmegaConf):
     # with open(f"eval/action_mse/action_std_level_{level}.pkl", "wb") as f:
     #     pickle.dump(std, f)
 
-    # plot_from_pickle("eval/action_mse")
+    plot_from_pickle("eval/action_mse")
 
 
 if __name__ == "__main__":

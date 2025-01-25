@@ -176,7 +176,7 @@ if __name__ == "__main__":
     movement_threshold = args.movement_threshold
     M = args.M
 
-    if directory.endswith(".zarr"):
+    if ".zarr" in directory:
         trajectories = load_trajectory_from_zarr(directory, movement_threshold)
     else:
         trajectories = load_trajectories_from_eval(directory, movement_threshold)
