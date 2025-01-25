@@ -6,7 +6,6 @@ import pickle
 import random
 import shutil
 import sys
-import tempfile
 import time
 from collections import deque
 from contextlib import contextmanager
@@ -71,7 +70,7 @@ def print_blue(text, end="\n"):
 
 
 class AnalyzeActionError:
-    def __init__(self, cfg: OmegaConf, zarr_path):
+    def __init__(self, cfg: OmegaConf, zarr_path, com_y_shift=0.0):
         if cfg.use_realtime:
             print_blue("Setting use_realtime to False for faster eval")
             cfg.use_realtime = False
@@ -87,6 +86,7 @@ class AnalyzeActionError:
         )
         self.device = "cuda:0"
         self.load_policy_from_checkpoint(self.checkpoint)
+        self.meshcat = StartMeshcat()
 
         if cfg.slider_type == "arbitrary":
             # create arbitrary shape sdf file
@@ -95,6 +95,7 @@ class AnalyzeActionError:
         self.horizon = self.dp_cfg.n_action_steps
         self.obs_horizon = self.dp_cfg.n_obs_steps
         self.batch_size = 32
+        self.com_y_shift = com_y_shift
         # hardcoded target since target changes to match com in physic shift
         self.target = np.array([0.587, -0.0355, 0.0])
 
@@ -122,6 +123,13 @@ class AnalyzeActionError:
         normalizer_path = self.checkpoint.parent.parent.joinpath("normalizer.pt")
         return torch.load(normalizer_path)
 
+    def shift_slider_com(self, slider_traj):
+        # To accomodate for physics shift implementation
+        theta = slider_traj[:, 2]
+        slider_traj[:, 0] += self.com_y_shift * np.sin(theta)
+        slider_traj[:, 1] -= self.com_y_shift * np.cos(theta)
+        return slider_traj
+
     def run(self, num_traj, plot_name):
         # Load the zarr file
         root = zarr.open(self.zarr_path)
@@ -135,6 +143,7 @@ class AnalyzeActionError:
             episode_end = episode_ends[i]
             pusher_traj = pusher_state[episode_start:episode_end]
             slider_traj = slider_state[episode_start:episode_end]
+            slider_traj = self.shift_slider_com(slider_traj)
             mse = self.compute_action_mse(pusher_traj, slider_traj)
             mses = np.vstack((mses, mse))
             episode_start = episode_end
@@ -159,7 +168,7 @@ class AnalyzeActionError:
     def compute_action_mse(self, pusher_traj, slider_traj):
         output_dir = self.simulate_plan(
             traj=self.create_combined_logs(pusher_traj, slider_traj),
-            meshcat=StartMeshcat(),
+            meshcat=self.meshcat,
         )
 
         mses = np.zeros((0, self.horizon))
@@ -255,14 +264,17 @@ class AnalyzeActionError:
         )
 
         # generate temporary directory
-        temp_dir = tempfile.TemporaryDirectory()
+        temp_dir = "./analyze_action_error_images"
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        os.makedirs(temp_dir)
 
         environment = DataCollectionTableEnvironment(
             desired_position_source=position_source,
             robot_system=position_controller,
             sim_config=self.sim_config,
             data_collection_config=self.data_collection_config,
-            data_collection_dir=temp_dir.name,
+            data_collection_dir=temp_dir,
             state_estimator_meshcat=meshcat,
         )
         environment.export_diagram("data_collection_table_environment.pdf")
@@ -271,7 +283,7 @@ class AnalyzeActionError:
         end_time = traj.pusher_desired.t[-1]
         environment.simulate(end_time)
         environment.resize_saved_images()
-        return temp_dir.name
+        return temp_dir
 
     def get_traj_obs_dict(self, pusher_traj, slider_traj, output_dir):
         # assert that number of files in f"{output_dir}/overhead_camera" == len(pusher_traj)
@@ -292,7 +304,6 @@ class AnalyzeActionError:
         )
         traj_obs_dict["action"] = torch.zeros((0, self.horizon, 2))
 
-        # TODO: Simulate the deque and create the observation histories
         pusher_pose_deque = deque(maxlen=self.obs_horizon)
         overhead_deque = deque(maxlen=self.obs_horizon)
         wrist_deque = deque(maxlen=self.obs_horizon)
@@ -372,47 +383,118 @@ class AnalyzeActionError:
         return traj_obs_dict
 
 
+def plot_from_pickle(dir_path):
+    files = []
+    for file in os.listdir(dir_path):
+        if file.endswith(".pkl") and "mse" in file:
+            files.append(file)
+    files.sort()
+    for file in files:
+        with open(os.path.join(dir_path, file), "rb") as f:
+            data = pickle.load(f)
+            # files are named action_mse_{level}.pkl
+            label = file.split("_")[-1].split(".")[0]
+            if "level" in file:
+                label = "Level " + label
+            plt.plot(data, label=label)
+    plt.xlabel("Time step")
+    plt.ylabel("MSE")
+    plt.title("MSE vs Time step")
+    plt.legend()
+    plt.savefig(f"{dir_path}/mse_all_levels.png")
+
+
 @hydra.main(
     version_base=None,
     config_path=str(pathlib.Path(__file__).parents[2].joinpath("config", "sim_config")),
 )
 def main(cfg: OmegaConf):
-    mse_per_level = []
-    legend = [
-        "Gamepad",
-        "Level 0",
-        "Level 1",
-        "Level 2",
-        "Level 3",
-    ]
-    num_traj = 300
+    # mse_per_level = []
+    # legend = [
+    #     "Gamepad",
+    #     "Level 0",
+    #     "Level 1",
+    #     "Level 2",
+    #     "Level 3",
+    # ]
+    # num_traj = 50
 
-    # gamepad
+    com_y_shifts = [0.03, -0.03, -0.06]
+
+    # # gamepad
     zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr"
     sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
-    mse, _ = sim_sim_eval.run(num_traj, f"action_mse_gamepad.png")
+    mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_gamepad.png")
     mse_per_level.append(mse)
+    with open("eval/action_mse/action_mse_gamepad.pkl", "wb") as f:
+        pickle.dump(mse, f)
+    with open("eval/action_mse/action_std_gamepad.pkl", "wb") as f:
+        pickle.dump(std, f)
 
-    # level 0
-    zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_tee_data_large.zarr"
-    sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
-    mse, _ = sim_sim_eval.run(num_traj, f"action_mse_level_0.png")
-    mse_per_level.append(mse)
+    # # level 0
+    # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_tee_data_large.zarr"
+    # sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
+    # mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_level_0.png")
+    # mse_per_level.append(mse)
+    # with open("eval/action_mse/action_mse_level_0.pkl", "wb") as f:
+    #     pickle.dump(mse, f)
+    # with open("eval/action_mse/action_std_level_0.pkl", "wb") as f:
+    #     pickle.dump(std, f)
 
-    for level in range(1, 4):
-        zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_{level}.zarr"
-        sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
-        mse, _ = sim_sim_eval.run(num_traj, f"action_mse_level_{level}.png")
-        mse_per_level.append(mse)
+    # for level in range(1, 4):
+    #     zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_{level}.zarr"
+    #     sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
+    #     mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_level_{level}.png")
+    #     mse_per_level.append(mse)
+    #     with open(f"eval/action_mse/action_mse_level_{level}.pkl", "wb") as f:
+    #         pickle.dump(mse, f)
+    #     with open(f"eval/action_mse/action_std_level_{level}.pkl", "wb") as f:
+    #         pickle.dump(std, f)
 
-    # Plot all 4 MSE as line plots with points
-    for level, mse in enumerate(mse_per_level):
-        plt.plot(range(8), mse, label=legend[level])
-    plt.xlabel("Time step")
-    plt.ylabel("MSE")
-    plt.title("MSE vs Time step")
-    plt.legend()
-    plt.savefig("action_mse.png")
+    # # Plot all 4 MSE as line plots with points
+    # for level, mse in enumerate(mse_per_level):
+    #     plt.plot(range(8), mse, label=legend[level])
+    # plt.xlabel("Time step")
+    # plt.ylabel("MSE")
+    # plt.title("MSE vs Time step")
+    # plt.legend()
+    # plt.savefig("action_mse.png")
+
+    """
+    Running into some errors with above (can't run script for too long?)
+    """
+
+    # num_traj = 50
+    # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr"
+    # sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
+    # mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_gamepad.png")
+    # with open("eval/action_mse/action_mse_gamepad.pkl", "wb") as f:
+    #     pickle.dump(mse, f)
+    # with open("eval/action_mse/action_std_gamepad.pkl", "wb") as f:
+    #     pickle.dump(std, f)
+
+    # num_traj = 50
+    # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_tee_data_large.zarr"
+    # sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
+    # mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_level_0.png")
+    # with open("eval/action_mse/action_mse_level_0.pkl", "wb") as f:
+    #     pickle.dump(mse, f)
+    # with open("eval/action_mse/action_std_level_0.pkl", "wb") as f:
+    #     pickle.dump(std, f)
+
+    # num_traj = 50
+    # level=1
+    # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_{level}.zarr"
+    # # need to shift com for physics shift rendering
+    # # cfg.physical_properties.center_of_mass = com[level-1]
+    # sim_sim_eval = AnalyzeActionError(cfg, zarr_path, com_y_shifts[level-1])
+    # mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_level_{level}.png")
+    # with open(f"eval/action_mse/action_mse_level_{level}.pkl", "wb") as f:
+    #     pickle.dump(mse, f)
+    # with open(f"eval/action_mse/action_std_level_{level}.pkl", "wb") as f:
+    #     pickle.dump(std, f)
+
+    # plot_from_pickle("eval/action_mse")
 
 
 if __name__ == "__main__":

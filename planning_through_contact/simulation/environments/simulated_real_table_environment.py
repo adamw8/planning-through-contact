@@ -240,7 +240,7 @@ class SimulatedRealTableEnvironment:
         print(f"Saved diagram to: {filename}")
 
     def set_slider_planar_pose(self, pose: PlanarPose):
-        min_height = 0.05
+        min_height = 0.02
 
         # add a small height to avoid the box penetrating the table
         q = pose.to_generalized_coords(min_height + 1e-2, z_axis_is_positive=True)
