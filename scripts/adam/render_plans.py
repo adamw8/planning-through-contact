@@ -27,13 +27,13 @@ def run_data_generation_script(
 
 # indice range is INCLUSIVE
 start_index = 0
-end_index = 59
+end_index = 0
 
 config_dir = "config/sim_config/sim_sim/physics_shift_no_visual_gap"
 config_name = "level_2.yaml"
-plans_root = "~/workspace/planning-through-contact/trajectories/physics_shift_level_2"
+plans_root = "/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_2"
 
-suppress_output = True
+suppress_output = False
 
 # ----------------------------------------------------------
 
