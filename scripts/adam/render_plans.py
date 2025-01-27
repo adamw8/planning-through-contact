@@ -27,7 +27,7 @@ def run_data_generation_script(
 
 # indice range is INCLUSIVE
 start_index = 0
-end_index = 0
+end_index = 59
 
 config_dir = "config/sim_config/sim_sim/physics_shift_no_visual_gap"
 config_name = "level_2.yaml"

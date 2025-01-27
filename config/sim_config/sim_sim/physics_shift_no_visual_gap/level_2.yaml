@@ -155,8 +155,8 @@ data_collection_config:
   render_plans: true
   convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
-  plans_dir: 'trajectories/physics_shift_level_2/run_0'
-  rendered_plans_dir: 'trajectories_rendered/physics_shift_level_2_no_visual_gap'
+  plans_dir: '~/workspace/planning-through-contact/trajectories/physics_shift_level_2/run_0'
+  rendered_plans_dir: '~/workspace/planning-through-contact/trajectories_rendered/physics_shift_level_2_no_visual_gap'
   zarr_path: '~/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_2_no_visual_gap.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
