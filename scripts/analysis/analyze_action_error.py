@@ -94,7 +94,7 @@ class AnalyzeActionError:
 
         self.horizon = self.dp_cfg.n_action_steps
         self.obs_horizon = self.dp_cfg.n_obs_steps
-        self.batch_size = 32
+        self.batch_size = 128
         self.com_y_shift = com_y_shift
         # hardcoded target since target changes to match com in physic shift
         self.target = np.array([0.587, -0.0355, 0.0])
@@ -141,12 +141,35 @@ class AnalyzeActionError:
         episode_start = 0
         offset = 0
 
+        log_file = f"eval/action_mse/log_{plot_name.split('.')[0].split('/')[-1]}.txt"
+        if os.path.exists(log_file):
+            os.remove(log_file)
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
         for i in range(offset, min(num_traj + offset, len(episode_ends))):
             episode_end = episode_ends[i]
             pusher_traj = pusher_state[episode_start:episode_end]
             slider_traj = slider_state[episode_start:episode_end]
             slider_traj = self.shift_slider_com(slider_traj)
             mse = self.compute_action_mse(pusher_traj, slider_traj)
+            max_first_mse = np.max(mse[:, 0])
+
+            # Outlier detection
+            outlier_threshold = 0.01**2  # 1cm^2
+
+            # Check for outliers based on the first index of each point in `mse`
+            initial_size = mse.shape[0]
+            mse = mse[mse[:, 0] <= outlier_threshold]
+            with open(log_file, "a") as f:
+                f.write((f"Trajectory {i}\n--------------------\n"))
+                f.write(f"Max MSE at first timestep: {max_first_mse:.6f}. ")
+                removed_count = initial_size - mse.shape[0]
+                if removed_count > 0:
+                    f.write(
+                        f"Removed {removed_count} outlier(s) out of {initial_size} points."
+                    )
+                f.write("\n\n")
+
             mses = np.vstack((mses, mse))
             episode_start = episode_end
 
@@ -467,14 +490,14 @@ def main(cfg: OmegaConf):
     Running into some errors with above (can't run script for too long?)
     """
 
-    # num_traj = 50
-    # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr"
-    # sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
-    # mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_gamepad.png")
-    # with open("eval/action_mse/action_mse_gamepad.pkl", "wb") as f:
-    #     pickle.dump(mse, f)
-    # with open("eval/action_mse/action_std_gamepad.pkl", "wb") as f:
-    #     pickle.dump(std, f)
+    num_traj = 50
+    zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr"
+    sim_sim_eval = AnalyzeActionError(cfg, zarr_path)
+    mse, std = sim_sim_eval.run(num_traj, f"eval/action_mse/action_mse_gamepad.png")
+    with open("eval/action_mse/action_mse_gamepad.pkl", "wb") as f:
+        pickle.dump(mse, f)
+    with open("eval/action_mse/action_std_gamepad.pkl", "wb") as f:
+        pickle.dump(std, f)
 
     # num_traj = 50
     # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_tee_data_large.zarr"
@@ -486,7 +509,7 @@ def main(cfg: OmegaConf):
     #     pickle.dump(std, f)
 
     # num_traj = 50
-    # level=3
+    # level=1
     # zarr_path = f"/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_{level}.zarr"
     # # need to shift com for physics shift rendering
     # # cfg.physical_properties.center_of_mass = com[level-1]
