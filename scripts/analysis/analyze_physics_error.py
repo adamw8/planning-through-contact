@@ -229,7 +229,9 @@ def compute_physics_error(
     pos_errors = []
     rot_errors = []
     episode_start = 0
+    num_intervals = 0
     for i in range(num_traj):
+        print_blue(f"Starting trajectory {i}")
         episode_end = episode_ends[i]
         pusher_episode = pusher_state[episode_start:episode_end]
         slider_episode = slider_state[episode_start:episode_end]
@@ -250,6 +252,9 @@ def compute_physics_error(
             )
             pos_errors.append(pos_error)
             rot_errors.append(rot_error)
+
+            num_intervals += 1
+            print_blue(f"Completed {num_intervals} intervals.")
         episode_start = episode_end
 
     # Save pos_errors and rot_errors
@@ -271,7 +276,9 @@ def compute_physics_error(
 
     # plot pos error and rot error on 2 subplots
     fig, axs = plt.subplots(2)
-    axs[0].errorbar(np.arange(horizon) * 0.1, pos_errors_mean, yerr=pos_errors_std)
+    axs[0].errorbar(
+        np.arange(horizon) * 0.1, 100 * pos_errors_mean, yerr=100 * pos_errors_std
+    )
     axs[0].set_title("Position Error")
     axs[0].set_xlabel("Time (s)")
     axs[0].set_ylabel("Error [cm]")
@@ -310,7 +317,8 @@ def main(cfg: OmegaConf):
     meshcat = StartMeshcat()
 
     for i in range(len(zarr_paths)):
-        if i != 0:
+        # Only run one at a time (for now)
+        if i != 3:
             continue
 
         zarr_path = zarr_paths[i]
@@ -331,33 +339,33 @@ def main(cfg: OmegaConf):
         )
 
     # # Plot all errors
-    # pos_error_means = []
-    # rot_error_means = []
-    # for i in range(len(zarr_paths)):
-    #     pos_error_path = f"eval/physics_error/{plot_names[i]}_pos_error.pkl"
-    #     rot_error_path = f"eval/physics_error/{plot_names[i]}_rot_error.pkl"
-    #     with open(pos_error_path, "rb") as f:
-    #         pos_error = pickle.load(f)
-    #     with open(rot_error_path, "rb") as f:
-    #         rot_error = pickle.load(f)
-    #     pos_error_means.append(pos_error.mean(axis=0))
-    #     rot_error_means.append(rot_error.mean(axis=0))
+    pos_error_means = []
+    rot_error_means = []
+    for i in range(len(zarr_paths)):
+        pos_error_path = f"eval/physics_error/{plot_names[i]}_pos_error.pkl"
+        rot_error_path = f"eval/physics_error/{plot_names[i]}_rot_error.pkl"
+        with open(pos_error_path, "rb") as f:
+            pos_error = pickle.load(f)
+        with open(rot_error_path, "rb") as f:
+            rot_error = pickle.load(f)
+        pos_error_means.append(pos_error.mean(axis=0))
+        rot_error_means.append(rot_error.mean(axis=0))
 
-    # fig, axs = plt.subplots(2)
-    # for i in range(len(pos_error_means)):
-    #     axs[0].plot(pos_error_means[i], label=plot_names[i])
-    # axs[0].set_title("Position Error")
-    # axs[0].set_xlabel("Time (s)")
-    # axs[0].set_ylabel("Error [cm]")
-    # axs[0].legend()
+    fig, axs = plt.subplots(2)
+    for i in range(len(pos_error_means)):
+        axs[0].plot(100 * pos_error_means[i], label=plot_names[i])
+    axs[0].set_title("Position Error")
+    axs[0].set_xlabel("Time (s)")
+    axs[0].set_ylabel("Error [cm]")
+    axs[0].legend()
 
-    # for i in range(len(rot_error_means)):
-    #     axs[1].plot(rot_error_means[i], label=plot_names[i])
-    # axs[1].set_title("Rotation Error")
-    # axs[1].set_xlabel("Time (s)")
-    # axs[1].set_ylabel("Error [rad]")
-    # axs[1].legend()
-    # plt.savefig(f"eval/physics_error/physics_error_all_levels.png")
+    for i in range(len(rot_error_means)):
+        axs[1].plot(rot_error_means[i], label=plot_names[i])
+    axs[1].set_title("Rotation Error")
+    axs[1].set_xlabel("Time (s)")
+    axs[1].set_ylabel("Error [rad]")
+    axs[1].legend()
+    plt.savefig(f"eval/physics_error/physics_error_all_levels.png")
 
 
 if __name__ == "__main__":
