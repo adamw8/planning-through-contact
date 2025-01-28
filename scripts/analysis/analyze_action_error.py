@@ -127,7 +127,6 @@ class AnalyzeActionError:
                 outlier_threshold = 0.01  # 1cm
                 initial_len = action_error.shape[0]
                 action_error = action_error[action_error[:, 0] <= outlier_threshold]
-                print(f"Rejected {initial_len - action_error.shape[0]} outliers.")
                 action_errors = torch.cat([action_errors, action_error], dim=0)
 
                 del batch
