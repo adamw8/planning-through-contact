@@ -99,7 +99,7 @@ class AnalyzeActionError:
         dataloader = DataLoader(
             self.dataset,
             batch_size=64,
-            num_workers=1,
+            num_workers=4,
             persistent_workers=False,
             pin_memory=True,
             shuffle=False,
@@ -186,6 +186,9 @@ if __name__ == "__main__":
     experiments = {
         "gamepad": "/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data_carbon.zarr",
         "level_0": "/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_tee_data_carbon.zarr",
+        "level_1": "/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_1_no_visual_gap.zarr",
+        "level_2": "/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_2_no_visual_gap.zarr",
+        "level_3": "/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_3_no_visual_gap.zarr",
     }
     checkpoint = "/home/adam/workspace/gcs-diffusion/data/outputs/sim_sim/baseline_carbon/150/checkpoints/latest.ckpt"
     for experiment, zarr_path in experiments.items():
