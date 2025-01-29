@@ -111,8 +111,6 @@ class AnalyzeActionError:
                 batch = dict_apply(
                     batch, lambda x: x.to(self._device, non_blocking=True)
                 )
-                # TODO: figure out what is happening with the normalizer...
-                # in both training workspace and here
                 predicted_actions = (
                     self._policy.predict_action(batch, use_DDIM=True)["action"]
                     .detach()
