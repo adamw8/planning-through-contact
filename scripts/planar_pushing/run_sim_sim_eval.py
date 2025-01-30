@@ -86,9 +86,10 @@ class SimSimEval:
         print(f"Target slider pose: {self.slider_goal_pose}")
         assert self.sim_config.use_realtime == False
 
-        # Set up random seeds
-        random.seed(self.multi_run_config.seed)
-        np.random.seed(self.multi_run_config.seed)
+        self.continue_eval = False
+        if "continue_eval" in cfg and cfg.continue_eval:
+            self.continue_eval = True
+            assert os.path.exists(os.path.join(self.output_dir, "summary.pkl"))
 
         self.workspace = self.multi_run_config.workspace
         self.plan_config = get_default_plan_config(
@@ -124,7 +125,11 @@ class SimSimEval:
         )
         self.environment.export_diagram("sim_sim_environment.pdf")
 
-        # Random initial conditoin
+        # Set up random seeds
+        random.seed(self.multi_run_config.seed)
+        np.random.seed(self.multi_run_config.seed)
+
+        # Random initial condition
         self.reset_environment()
 
         # Useful variables for querying mbp
@@ -171,22 +176,47 @@ class SimSimEval:
         time_step = self.sim_config.time_step * 10
         t = time_step
         last_reset_time = 0.0
-        num_successful_trials = 0
         num_completed_trials = 0
+        prev_completed_trials = 0
         meshcat = self.environment._meshcat
+        sim_mode = SimulationMode.EVAL
+        prev_run_flag = True  # default value is True
+
         summary = {
             "successful_trials": [],
             "trial_times": [],
             "initial_conditions": [self.get_slider_pose().vector()],
             "final_error": [],
             "trial_result": [],
+            "total_eval_sim_time": 0.0,
+            "total_eval_wall_time": 0.0,
         }
-        sim_mode = SimulationMode.EVAL
-        prev_run_flag = True  # default value is True
+
+        if self.continue_eval:
+            # Load in existing summary from pkl file
+            with open(os.path.join(self.output_dir, "summary.pkl"), "rb") as f:
+                summary = pickle.load(f)
+
+            # update prev_completed_trials, num_completed_trials
+            prev_completed_trials = len(summary["trial_times"])
+            num_completed_trials = prev_completed_trials
+            summary["initial_conditions"].append(self.get_slider_pose().vector())
+
+            # Override existing summary.txt
+            with open(os.path.join(self.output_dir, "summary.txt"), "w") as f:
+                for i in range(prev_completed_trials):
+                    self.update_summary(
+                        i,
+                        Result(summary["trial_result"][i]),
+                        summary["trial_times"][i],
+                        summary["initial_conditions"][i],
+                        summary["final_error"][i],
+                    )
 
         # Simulate
         start_time = time.time()
-        meshcat.StartRecording(frames_per_second=10)
+        if not self.continue_eval:
+            meshcat.StartRecording(frames_per_second=10)
         self.environment.visualize_desired_slider_pose()
         self.environment.visualize_desired_pusher_pose()
         while t < end_time:
@@ -203,7 +233,6 @@ class SimSimEval:
                 success = self.check_success()
                 if success:
                     reset_environment = True
-                    num_successful_trials += 1
                     result = Result.SUCCESS
                     summary["successful_trials"].append(num_completed_trials)
                     summary["trial_result"].append(Result.SUCCESS.value)
@@ -258,11 +287,15 @@ class SimSimEval:
                     if (
                         num_completed_trials
                         >= self.multi_run_config.num_trials_to_record
+                        and not self.continue_eval
                     ):
                         meshcat.StopRecording()
 
                 # Finished Eval
-                if num_completed_trials >= self.multi_run_config.num_runs:
+                if (
+                    num_completed_trials - prev_completed_trials
+                    >= self.multi_run_config.num_runs
+                ):
                     break
             elif sim_mode == SimulationMode.RETURN_TO_START:
                 # Repeatedly reset diffusion policy until run_flag is True
@@ -291,9 +324,9 @@ class SimSimEval:
             t = round(t / time_step) * time_step
 
         # Save logs
-        summary["total_eval_sim_time"] = t
-        summary["total_eval_wall_time"] = time.time() - start_time
-        if self.multi_run_config.num_trials_to_record > 0:
+        summary["total_eval_sim_time"] += t
+        summary["total_eval_wall_time"] += time.time() - start_time
+        if not self.continue_eval and self.multi_run_config.num_trials_to_record > 0:
             self.environment.save_recording("eval.html", self.output_dir)
         self.save_summary(summary)
         self.print_summary(os.path.join(self.output_dir, "summary.txt"))
@@ -608,13 +641,14 @@ class SimSimEval:
 
         # Write the new content
         with open(os.path.join(self.output_dir, "summary.txt"), "w") as f:
+            num_runs = len(summary["trial_times"])
             f.write("Evaluation Summary\n")
             f.write("====================================\n")
             f.write("Units: seconds, meters, radians\n\n")
-            f.write(f"Total trials: {self.multi_run_config.num_runs}\n")
+            f.write(f"Total trials: {num_runs}\n")
             f.write(f"Total successful trials: {len(summary['successful_trials'])}\n")
             f.write(
-                f"Success rate: {len(summary['successful_trials']) / self.multi_run_config.num_runs:.6f}\n"
+                f"Success rate: {len(summary['successful_trials']) / num_runs:.6f}\n"
             )
             f.write(
                 f"Average successful translation error: {average_successful_trans_error}\n"
