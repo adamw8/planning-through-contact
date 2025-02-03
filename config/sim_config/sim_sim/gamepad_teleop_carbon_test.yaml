@@ -117,8 +117,8 @@ domain_randomization_color_range: 0.0
 log_dir: 'diffusion_policy_logs'
 multi_run_config:
   _target_: planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config.MultiRunConfig
-  num_runs: 100
-  max_attempt_duration: 75
+  num_runs: 1
+  max_attempt_duration: 1
   seed: 0
   slider_type: ${slider_type}
   arbitrary_shape_pickle_path: ${arbitrary_shape_pickle_path}

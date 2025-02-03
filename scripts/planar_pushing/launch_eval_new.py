@@ -21,7 +21,6 @@ BASE_COMMAND = [
     "scripts/planar_pushing/run_sim_sim_eval.py",
     f"--config-dir={CONFIG_DIR}",
 ]
-SUCCESS_RATES = {}
 
 # ---------------------------------------------------------
 # Example Usage:
@@ -39,11 +38,27 @@ class JobConfig:
     checkpoint_path: str
     run_dir: str
     config_name: str
+    num_trials: int = -1
     seed: int = 0
     continue_flag: bool = False
 
     def __str__(self):
-        return f"checkpoint_path={self.checkpoint_path}, run_dir={self.run_dir}, config_name={self.config_name}, seed={self.seed}, continue_flag={self.continue_flag}"
+        return f"checkpoint_path={self.checkpoint_path}, run_dir={self.run_dir}, config_name={self.config_name}, num_trials={self.num_trails}, seed={self.seed}, continue_flag={self.continue_flag}"
+
+    def __repr__(self):
+        return str(self)
+
+
+@dataclass
+class JobResult:
+    num_successful_trials: int
+    num_trials: int
+
+    def __post_init__(self):
+        self.success_rate = self.num_successful_trials / self.num_trials
+
+    def __str__(self):
+        return f"num_successful_trials={self.num_successful_trials}, num_trials={self.num_trials}, success_rate={self.success_rate}"
 
     def __repr__(self):
         return str(self)
@@ -120,55 +135,58 @@ def load_jobs_from_csv(csv_file):
     return job_groups
 
 
-# def run_simulation(job_config):
-#     """Run a single simulation with specified checkpoint, run directory, and config name."""
-#     checkpoint_path = job_config.checkpoint_path
-#     run_dir = job_config.run_dir
-#     config_name = job_config.config_name
-#     seed = job_config.seed
-#     continue_flag = job_config.continue_flag
-
-#     # TODO: provide overrides here
-#     command = BASE_COMMAND + [
-#         f"--config-name={config_name}",
-#         f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
-#         f'hydra.run.dir="{run_dir}"',
-#     ]
-#     command_str = " ".join(command)
-
-#     print("\n" + "=" * 50)
-#     print(f"=== JOB START: {run_dir} ===")
-#     print(command_str)
-#     print("=" * 50 + "\n")
-
-#     result = subprocess.run(command, capture_output=True, text=True)
-
-#     if result.returncode == 0:
-#         print(f"\n✅ Completed: {run_dir}")
-
-#         # Compute success rate
-#         summary_file = os.path.join(run_dir, "summary.pkl")
-#         with open(summary_file, "rb") as f:
-#             summary = pickle.load(f)
-#         success_rate = len(summary["successful_trials"]) / len(summary["trial_times"])
-#     else:
-#         print(f"\n❌ Failed: {run_dir}\nError: {result.stderr}")
-#         success_rate = None
-
-#     global SUCCESS_RATES
-#     SUCCESS_RATES[run_dir] = success_rate
-#     print("\n" + "=" * 50)
-#     print(f"=== JOB END: {run_dir} ===")
-#     print(f"Success Rate: {success_rate}")
-#     print("=" * 50 + "\n")
-
-
 def run_simulation(job_config):
-    command = get_eval_command(job_config)
-    process = subprocess.Popen(
-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    return process
+    """Run a single simulation with specified checkpoint, run directory, and config name."""
+    checkpoint_path = job_config.checkpoint_path
+    run_dir = job_config.run_dir
+    config_name = job_config.config_name
+    num_trials = job_config.num_trials
+    seed = job_config.seed
+    continue_flag = job_config.continue_flag
+    assert num_trials > 0, "num_trials must be greater than 0"
+
+    # TODO: provide overrides here
+    command = BASE_COMMAND + [
+        f"--config-name={config_name}",
+        f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
+        f'hydra.run.dir="{run_dir}"',
+        f"multi_run_config.seed={seed}",
+        f"multi_run_config.num_runs={num_trials}",
+        f"++continue_eval={continue_flag}",
+    ]
+    command_str = " ".join(command)
+
+    print("\n" + "=" * 50)
+    print(f"=== JOB START: {run_dir} ===")
+    print(command_str)
+    print("=" * 50 + "\n")
+
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    if result.returncode == 0:
+        print(f"\n✅ Completed: {run_dir}")
+
+        # Compute success rate
+        summary_file = os.path.join(run_dir, "summary.pkl")
+        with open(summary_file, "rb") as f:
+            summary = pickle.load(f)
+        success_rate = len(summary["successful_trials"]) / len(summary["trial_times"])
+    else:
+        print(f"\n❌ Failed: {run_dir}\nError: {result.stderr}")
+        success_rate = None
+
+    print("\n" + "=" * 50)
+    print(f"=== JOB END: {run_dir} ===")
+    print(f"Success Rate: {success_rate}")
+    print("=" * 50 + "\n")
+
+    if success_rate is None:
+        return None
+    else:
+        return JobResult(
+            num_successful_trials=len(summary["successful_trials"]),
+            num_trials=len(summary["trial_times"]),
+        )
 
 
 def get_eval_command(job_config):
@@ -224,7 +242,7 @@ def validate_job_groups(job_groups):
     return True
 
 
-def print_diagnostic_info(job_groups, max_concurrent_jobs):
+def print_diagnostic_info(job_groups, max_concurrent_jobs, num_trials, drop_threshold):
     num_jobs = sum([len(group) for group in job_groups])
 
     print("\nDiagnostic Information:")
@@ -233,6 +251,11 @@ def print_diagnostic_info(job_groups, max_concurrent_jobs):
         f"Evaluating {len(job_groups)} training runs, consistenting of {num_jobs} checkpoints"
     )
     print(f"Running with {max_concurrent_jobs} jobs")
+    print(f"Checkpoints will be compared at {num_trials} trials.")
+    print(
+        f"During each comparison, if the probability that a checkpoint is better than the current best checkpoint is less than {drop_threshold}, the checkpoint will be dropped."
+    )
+    print(f"The best checkpoints will be evaluated for {sum(num_trials)} trials.")
     print("\nTraining run details:")
 
     for group in job_groups:
@@ -281,52 +304,33 @@ def main():
     args = parse_arguments()
     csv_file = args.csv_path
     max_concurrent_jobs = args.max_concurrent_jobs
+    num_trials = [1, 1, 1]
+    drop_threshold = 0.05
 
     job_groups = load_jobs_from_csv(csv_file)
-    validated_jobs = validate_job_groups(job_groups)
-    if not validated_jobs:
+    if not validate_job_groups(job_groups):
         return
-    print_diagnostic_info(job_groups, max_concurrent_jobs)
+    print_diagnostic_info(job_groups, max_concurrent_jobs, num_trials, drop_threshold)
 
-    job_queue = Queue()
-    for group in job_groups:
-        for job in group:
-            job_queue.put(job)
+    all_jobs = [job for group in job_groups for job in group]
 
-    futures = {}
-    running_jobs = set()
-    poll_interval = 1  # seconds
+    for i, trial in enumerate(num_trials):
+        for j, job in enumerate(all_jobs):
+            job.num_trials = trial
+            if i != 0:
+                job.continue_flag = True
+        with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
+            futures = {}
+            for job in all_jobs:
+                future = executor.submit(run_simulation, job)
+                futures[future] = job
+                # time.sleep(1) # prevent syncing issues with arbitrary_shape.sdf
 
-    # TODO: rework what chatgpt gave you
-    while not job_queue.empty() or running_jobs:
-        # Submit new jobs if slots are available
-        while len(running_jobs) < max_concurrent_jobs and not job_queue.empty():
-            job_config = job_queue.get()
-            process = run_simulation(job_config)
-            running_jobs.add((process, job_config))
-            print(f"🚀 Started job: {job_command}")
+            for future in as_completed(futures):
+                print(future)
+                print(future.result())
 
-        # Sleep before polling (reduces CPU usage)
-        time.sleep(poll_interval)
-
-        # Check for completed jobs
-        completed_jobs = []
-        for process, job_command in running_jobs:
-            if process.poll() is not None:  # Job finished
-                completed_jobs.append((process, job_config))
-
-        # Remove completed jobs
-        # Process the output of the completed jobs here
-        for process, job_config in completed_jobs:
-            running_jobs.remove((process, job_config))
-            print(f"✅ Job completed: {job_command}")
-
-            # OPTIONAL: Dynamically add new jobs (Modify logic as needed)
-            # if some_condition_to_add_new_jobs():
-            #     new_job = generate_new_job()
-            #     job_queue.put(new_job)
-
-    print("✅ All jobs finished.")
+    print("\n✅ All jobs finished.")
 
 
 if __name__ == "__main__":
