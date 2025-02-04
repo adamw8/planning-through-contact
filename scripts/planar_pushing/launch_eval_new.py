@@ -43,7 +43,7 @@ class JobConfig:
     continue_flag: bool = False
 
     def __str__(self):
-        return f"checkpoint_path={self.checkpoint_path}, run_dir={self.run_dir}, config_name={self.config_name}, num_trials={self.num_trails}, seed={self.seed}, continue_flag={self.continue_flag}"
+        return f"checkpoint_path={self.checkpoint_path}, run_dir={self.run_dir}, config_name={self.config_name}, num_trials={self.num_trials}, seed={self.seed}, continue_flag={self.continue_flag}"
 
     def __repr__(self):
         return str(self)
@@ -53,6 +53,7 @@ class JobConfig:
 class JobResult:
     num_successful_trials: int
     num_trials: int
+    job_config: JobConfig = None
 
     def __post_init__(self):
         self.success_rate = self.num_successful_trials / self.num_trials
@@ -84,12 +85,19 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def get_checkpoint_root_and_name(checkpoint_path):
+    """Get the root directory and name of the checkpoint."""
+    checkpoint_root = checkpoint_path.split("/checkpoints")[0]
+    checkpoint_name = checkpoint_path.split("/")[-1]
+    return checkpoint_root, checkpoint_name
+
+
 def load_jobs_from_csv(csv_file):
     """Load checkpoint groups, where each group consists of one or more checkpoints."""
     if not os.path.exists(csv_file):
         raise FileNotFoundError(f"CSV file '{csv_file}' does not exist.")
 
-    job_groups = []
+    job_groups = {}
     with open(csv_file, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -102,7 +110,9 @@ def load_jobs_from_csv(csv_file):
                 assert os.path.exists(
                     checkpoint_path
                 ), f"Checkpoint file '{checkpoint_path}' does not exist."
-                checkpoint_file = os.path.basename(checkpoint_path)
+                checkpoint_root, checkpoint_file = get_checkpoint_root_and_name(
+                    checkpoint_path
+                )
 
                 job_config = JobConfig(
                     checkpoint_path=checkpoint_path,
@@ -111,17 +121,22 @@ def load_jobs_from_csv(csv_file):
                     seed=0,
                     continue_flag=False,
                 )
-                job_groups.append([job_config])
+                assert checkpoint_root not in job_groups
+                job_groups[checkpoint_root] = {checkpoint_file: job_config}
 
             # If evaluating all checkpoints from a training run, create a group
             else:
-                checkpoint_group = []
+                checkpoint_group = {}
                 checkpoints_dir = os.path.join(checkpoint_path, "checkpoints")
                 for checkpoint_file in os.listdir(checkpoints_dir):
                     if checkpoint_file.endswith(".ckpt"):
                         full_checkpoint_path = os.path.join(
                             checkpoints_dir, checkpoint_file
                         )
+                        (
+                            checkpoints_root,
+                            checkpoint_file,
+                        ) = get_checkpoint_root_and_name(full_checkpoint_path)
                         job_config = JobConfig(
                             checkpoint_path=full_checkpoint_path,
                             run_dir=os.path.join(run_dir, checkpoint_file),
@@ -129,8 +144,9 @@ def load_jobs_from_csv(csv_file):
                             seed=0,
                             continue_flag=False,
                         )
-                        checkpoint_group.append(job_config)
-                job_groups.append(checkpoint_group)
+                        checkpoint_group[checkpoint_file] = job_config
+                assert checkpoints_root not in job_groups
+                job_groups[checkpoints_root] = checkpoint_group
 
     return job_groups
 
@@ -145,7 +161,6 @@ def run_simulation(job_config):
     continue_flag = job_config.continue_flag
     assert num_trials > 0, "num_trials must be greater than 0"
 
-    # TODO: provide overrides here
     command = BASE_COMMAND + [
         f"--config-name={config_name}",
         f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
@@ -170,14 +185,19 @@ def run_simulation(job_config):
         summary_file = os.path.join(run_dir, "summary.pkl")
         with open(summary_file, "rb") as f:
             summary = pickle.load(f)
-        success_rate = len(summary["successful_trials"]) / len(summary["trial_times"])
+        num_successful_trials = len(summary["successful_trials"])
+        num_trials = len(summary["trial_times"])
+        success_rate = num_successful_trials / num_trials
     else:
         print(f"\n❌ Failed: {run_dir}\nError: {result.stderr}")
         success_rate = None
 
     print("\n" + "=" * 50)
     print(f"=== JOB END: {run_dir} ===")
-    print(f"Success Rate: {success_rate}")
+    if success_rate is not None:
+        print(f"Success Rate: {success_rate} ({num_successful_trials}/{num_trials})")
+    else:
+        print(f"Success Rate: None")
     print("=" * 50 + "\n")
 
     if success_rate is None:
@@ -186,27 +206,8 @@ def run_simulation(job_config):
         return JobResult(
             num_successful_trials=len(summary["successful_trials"]),
             num_trials=len(summary["trial_times"]),
+            job_config=job_config,
         )
-
-
-def get_eval_command(job_config):
-    """Get the command to evaluate a single checkpoint."""
-    checkpoint_path = job_config.checkpoint_path
-    run_dir = job_config.run_dir
-    config_name = job_config.config_name
-    seed = job_config.seed
-    continue_flag = job_config.continue_flag
-
-    command = BASE_COMMAND + [
-        f"--config-name={config_name}",
-        f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
-        f"multi_run_config.seed={seed}",
-        f'hydra.run.dir="{run_dir}"',
-    ]
-    if continue_flag:
-        command.append("++continue_eval=true")
-    command_str = " ".join(command)
-    return command_str
 
 
 def validate_job_groups(job_groups):
@@ -216,16 +217,16 @@ def validate_job_groups(job_groups):
 
     # Sure there are no duplicate logging directories in the jobs list
     logging_dirs = []
-    for group in job_groups:
-        for job in group:
+    for _, group in job_groups.items():
+        for _, job in group.items():
             logging_dirs.append(job.run_dir)
     if len(logging_dirs) != len(set(logging_dirs)):
         print("Duplicate logging directories found in the jobs list.")
         return False
 
     # Double check if output directories already exist
-    for group in job_groups:
-        for job in group:
+    for _, group in job_groups.items():
+        for _, job in group.items():
             output_dir = job.run_dir
             if os.path.exists(output_dir):
                 print(
@@ -243,7 +244,7 @@ def validate_job_groups(job_groups):
 
 
 def print_diagnostic_info(job_groups, max_concurrent_jobs, num_trials, drop_threshold):
-    num_jobs = sum([len(group) for group in job_groups])
+    num_jobs = sum([len(group) for group in job_groups.values()])
 
     print("\nDiagnostic Information:")
     print("=======================")
@@ -253,21 +254,19 @@ def print_diagnostic_info(job_groups, max_concurrent_jobs, num_trials, drop_thre
     print(f"Running with {max_concurrent_jobs} jobs")
     print(f"Checkpoints will be compared at {num_trials} trials.")
     print(
-        f"During each comparison, if the probability that a checkpoint is better than the current best checkpoint is less than {drop_threshold}, the checkpoint will be dropped."
+        f"During each comparison, if the probability that a checkpoint "
+        f"is better than the current best checkpoint is less than {drop_threshold}, "
+        f"the checkpoint will be dropped."
     )
     print(f"The best checkpoints will be evaluated for {sum(num_trials)} trials.")
     print("\nTraining run details:")
 
-    for group in job_groups:
-        training_dir = os.path.dirname(
-            group[0].checkpoint_path.split("/checkpoints")[0]
-        )
-        run_dir = os.path.dirname(group[0].run_dir)
-        config_name = group[0].config_name
+    for training_dir, group in job_groups.items():
         print("------------------------------")
         print(f"Training Run: {training_dir}")
         print("Checkpoints:")
-        for i, job in enumerate(group):
+        for i, job_item in enumerate(group.items()):
+            _, job = job_item
             print(f"  {i+1}. {os.path.basename(job.checkpoint_path)}")
         print(f"Eval directory: {job.run_dir}")
         print(f"Config Name: {job.config_name}")
@@ -300,11 +299,102 @@ def prob_p1_greater_p2(n1, N1, n2, N2):
     return integral
 
 
+def determine_new_jobs_to_run(success_rates, drop_threshold):
+    jobs_to_run = []
+    for group, completed_jobs in success_rates.items():
+        # Check for Nones
+        has_none = False
+        for checkpoint, result in completed_jobs.items():
+            if result is None:
+                has_none = True
+                break
+        if has_none:
+            print(f"Skipping group {group} due to None values.")
+            continue
+
+        # Check for only one job
+        if len(completed_jobs) == 1:
+            result = list(completed_jobs.values())[0]
+            jobs_to_run.append(result.job_config)
+            continue
+
+        # Find the best job
+        best_job_success_rate = 0
+        best_job_num_successful_trials = 0
+        best_job_num_trials = 0
+        for checkpoint, result in completed_jobs.items():
+            if result.success_rate > best_job_success_rate:
+                best_job_success_rate = result.success_rate
+                best_job_num_successful_trials = result.num_successful_trials
+                best_job_num_trials = result.num_trials
+
+        # Compare all other jobs to the best job
+        for checkpoint, result in completed_jobs.items():
+            if result.success_rate == best_job_success_rate:
+                jobs_to_run.append(result.job_config)
+                continue
+
+            # Compare the job to the best job
+            prob = prob_p1_greater_p2(
+                result.num_successful_trials,
+                result.num_trials,
+                best_job_num_successful_trials,
+                best_job_num_trials,
+            )
+            if prob < drop_threshold:
+                print(
+                    f"Dropping {checkpoint} with success rate {result.success_rate} from group {group}."
+                )
+            else:
+                jobs_to_run.append(result.job_config)
+
+    return jobs_to_run
+
+
+def print_best_checkpoints(success_rates, job_groups):
+    print("Final Results (Best Checkpoints):")
+    print("=======================")
+    for group in job_groups.keys():
+        if len(success_rates[group]) == 0:
+            print(f"{group}:\n  error (please rerun)\n")
+            continue
+
+        # if group has None result, a job has failed along the way
+        has_none = False
+        for checkpoint, result in success_rates[group].items():
+            if result is None:
+                has_none = True
+                break
+        if has_none:
+            print(f"{group}:\n  error (please rerun)\n")
+            continue
+
+        # find the best job
+        best_result = JobResult(0, 1)  # success rate of 0
+        for checkpoint, result in success_rates[group].items():
+            if result.success_rate > best_result.success_rate:
+                best_result = result
+            elif result.success_rate == best_result.success_rate:
+                _, checkpoint_file = get_checkpoint_root_and_name(
+                    result.job_config.checkpoint_path
+                )
+        print(f"{group}:")
+        for checkpoint, result in success_rates[group].items():
+            if result.success_rate == best_result.success_rate:
+                _, checkpoint_file = get_checkpoint_root_and_name(
+                    result.job_config.checkpoint_path
+                )
+                print(
+                    f"  {checkpoint_file}: {result.success_rate:.6f} ({result.num_successful_trials}/{result.num_trials})"
+                )
+        print()
+
+
 def main():
     args = parse_arguments()
     csv_file = args.csv_path
     max_concurrent_jobs = args.max_concurrent_jobs
-    num_trials = [1, 1, 1]
+    num_trials = [1, 1]
     drop_threshold = 0.05
 
     job_groups = load_jobs_from_csv(csv_file)
@@ -312,25 +402,52 @@ def main():
         return
     print_diagnostic_info(job_groups, max_concurrent_jobs, num_trials, drop_threshold)
 
-    all_jobs = [job for group in job_groups for job in group]
-
+    jobs_to_run = [
+        job_config for group in job_groups.values() for job_config in group.values()
+    ]
     for i, trial in enumerate(num_trials):
-        for j, job in enumerate(all_jobs):
-            job.num_trials = trial
-            if i != 0:
-                job.continue_flag = True
+        success_rates = {group: {} for group in job_groups.keys()}
+        num_jobs_per_group = {group: 0 for group in job_groups.keys()}
+        for job in jobs_to_run:
+            group, checkpoint_file = get_checkpoint_root_and_name(job.checkpoint_path)
+            num_jobs_per_group[group] += 1
+
+        print(f"\nRound {i+1} of {len(num_trials)}: Running {len(jobs_to_run)} jobs")
+        for group, num_jobs in num_jobs_per_group.items():
+            print(f"  {group}: {num_jobs} job(s)")
+
+        # Overwrite job configs
+        for job_config in jobs_to_run:
+            job_config.num_trials = trial
+            job_config.seed = i
+            job_config.continue_flag = i != 0
+
+        # Run jobs
         with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
+            # Submit jobs
             futures = {}
-            for job in all_jobs:
+            for job in jobs_to_run:
                 future = executor.submit(run_simulation, job)
                 futures[future] = job
-                # time.sleep(1) # prevent syncing issues with arbitrary_shape.sdf
+                time.sleep(1)  # prevent syncing issues with arbitrary_shape.sdf
 
+            # Wait for jobs to finish
             for future in as_completed(futures):
-                print(future)
-                print(future.result())
+                job_result = future.result()
+                group, checkpoint_file = get_checkpoint_root_and_name(
+                    job_result.job_config.checkpoint_path
+                )
+                assert (
+                    checkpoint_file not in success_rates[group]
+                ), f"Duplicate checkpoint {checkpoint_file} in group {group}"
+                success_rates[group][checkpoint_file] = job_result
 
-    print("\n✅ All jobs finished.")
+        # Determine new jobs to run
+        if i != len(num_trials) - 1:
+            jobs_to_run = determine_new_jobs_to_run(success_rates, drop_threshold)
+
+    print("\n✅ All jobs finished.\n")
+    print_best_checkpoints(success_rates, job_groups)
 
 
 if __name__ == "__main__":
