@@ -15,7 +15,7 @@ physical_properties: # Slider physical properties
   _target_: planning_through_contact.tools.utils.PhysicalProperties
   mass: 0.1
   inertia: [[1e-5, 0.0, 0.0], [0.0, 1e-5, 0.0], [0.0, 0.0, 1e-5]]
-  center_of_mass: null # [0.0, 0.0, 0.0] # Use null for uniform densit7y
+  center_of_mass: [0.0, -0.0655, 0.0] # Use null for uniform density
   is_compliant: true
   hydroelastic_modulus: 1.0e6
   # NOTE: These friction coefficients are used for sim while the ones in `dynamic_config` are used for planning!
@@ -152,13 +152,12 @@ joint_velocity_limit_factor: 1.0 # .inf
 data_collection_config:
   _target_: planning_through_contact.simulation.environments.data_collection_table_environment.DataCollectionConfig
   generate_plans: false
-  render_plans: true
-  convert_to_zarr: false
+  render_plans: false
+  convert_to_zarr: true
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
-  # plans_dir: 'trajectories/cotrain_data_v2'
-  plans_dir: 'trajectories/gamepad_teleop_carbon'
-  rendered_plans_dir: 'trajectories_rendered/gamepad_teleop_carbon_test'
-  zarr_path: 'trajectories_rendered/sim_tee_data_carbon.zarr'
+  plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_2/run_0'
+  rendered_plans_dir: '/home/adam/workspace/planning-through-contact/trajectories_rendered/physics_shift_level_2_no_visual_gap'
+  zarr_path: '/home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_2_no_visual_gap.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024
   action_chunk_length: 2048

@@ -176,6 +176,7 @@ class DataCollectionTableEnvironment:
         robot_system: RobotSystemBase,
         sim_config: PlanarPushingSimConfig,
         data_collection_config: DataCollectionConfig,
+        data_collection_dir: Optional[str] = None,
         state_estimator_meshcat: Optional[Meshcat] = None,
     ):
         self._desired_position_source = desired_position_source
@@ -185,9 +186,12 @@ class DataCollectionTableEnvironment:
         self._meshcat = state_estimator_meshcat
         self._simulator = None
         self._data_collection_config = data_collection_config
-        self._data_collection_dir = self._setup_data_collection_dir(
-            data_collection_config.rendered_plans_dir
-        )
+        if data_collection_dir is not None:
+            self._data_collection_dir = data_collection_dir
+        else:
+            self._data_collection_dir = self._setup_data_collection_dir(
+                data_collection_config.rendered_plans_dir
+            )
         self._log_path = f"{self._data_collection_dir}/log.txt"
         self._diff_ik_time_step = self._get_diff_ik_time_step()
 
