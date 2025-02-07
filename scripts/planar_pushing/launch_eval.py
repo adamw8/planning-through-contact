@@ -153,7 +153,7 @@ def load_jobs_from_csv(csv_file):
     return job_groups
 
 
-def run_simulation(job_config):
+def run_simulation(job_config, job_number, total_jobs, round_number, total_rounds):
     """Run a single simulation with specified checkpoint, run directory, and config name."""
     checkpoint_path = job_config.checkpoint_path
     run_dir = job_config.run_dir
@@ -174,6 +174,9 @@ def run_simulation(job_config):
     command_str = " ".join(command)
 
     print("\n" + "=" * 50)
+    print(
+        f"=== Round ({round_number} of {total_rounds}): JOB {job_number} of {total_jobs} ==="
+    )
     print(f"=== JOB START: {run_dir} ===")
     print(command_str)
     print("=" * 50 + "\n")
@@ -399,7 +402,7 @@ def main():
     csv_file = args.csv_path
     max_concurrent_jobs = args.max_concurrent_jobs
     num_trials = [50, 50, 100]  # total of 200
-    drop_threshold = 0.03  # Seems reasonable from visualization tests
+    drop_threshold = 0.05  # Seems reasonable from visualization tests
 
     job_groups = load_jobs_from_csv(csv_file)
     if not validate_job_groups(job_groups):
@@ -410,6 +413,7 @@ def main():
         job_config for group in job_groups.values() for job_config in group.values()
     ]
     for i, trial in enumerate(num_trials):
+        round_number = i + 1
         success_rates = {group: {} for group in job_groups.keys()}
         num_jobs_per_group = {group: 0 for group in job_groups.keys()}
         for job in jobs_to_run:
@@ -430,8 +434,15 @@ def main():
         with ThreadPoolExecutor(max_workers=max_concurrent_jobs) as executor:
             # Submit jobs
             futures = {}
-            for job in jobs_to_run:
-                future = executor.submit(run_simulation, job)
+            for job_number, job in enumerate(jobs_to_run):
+                future = executor.submit(
+                    run_simulation,
+                    job,
+                    job_number + 1,
+                    len(jobs_to_run),
+                    round_number,
+                    len(num_trials),
+                )
                 futures[future] = job
                 time.sleep(1)  # prevent syncing issues with arbitrary_shape.sdf
 
