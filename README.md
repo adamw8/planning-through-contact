@@ -17,7 +17,7 @@ to have Python3.11 installed on your system.
 Then, configure poetry to setup a virtual environment that uses Python 3.11:
 
 ```python
-poetry env use python3.11
+poetry env use python3.10
 ```
 
 Next, install all the required dependencies to the virtual environment with the
@@ -40,7 +40,7 @@ Navigate to a desired installation location and run:
 ```console
 git clone git@github.com:bernhardpg/drake.git 
 cd drake
-git checkout towards-tight-convex-relaxations
+git checkout sample-paths-and-sdp-options
 ```
 
 To build Drake and the python bindings, run:
