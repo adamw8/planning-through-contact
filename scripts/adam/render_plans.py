@@ -27,11 +27,11 @@ def run_data_generation_script(
 
 # indice range is INCLUSIVE
 start_index = 0
-end_index = 59
+end_index = 10
 
-config_dir = "config/sim_config/sim_sim/physics_shift_no_visual_gap"
-config_name = "level_1.yaml"
-plans_root = "/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_1"
+config_dir = "config/sim_config/sim_sim"
+config_name = "gamepad_teleop_carbon.yaml"
+plans_root = "/home/adam/workspace/planning-through-contact/trajectories/gamepad_teleop_visual_gap"
 
 suppress_output = True
 
