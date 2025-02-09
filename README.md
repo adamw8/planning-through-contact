@@ -40,7 +40,7 @@ Navigate to a desired installation location and run:
 ```console
 git clone git@github.com:bernhardpg/drake.git 
 cd drake
-git checkout sample-paths-and-sdp-options
+git checkout towards-tight-convex-relaxations
 ```
 
 To build Drake and the python bindings, run:
