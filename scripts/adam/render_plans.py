@@ -27,7 +27,7 @@ def run_data_generation_script(
 
 # indice range is INCLUSIVE
 start_index = 0
-end_index = 0
+end_index = 9
 
 config_dir = "config/sim_config/sim_sim"
 config_name = "cotrain_rendering.yaml"
