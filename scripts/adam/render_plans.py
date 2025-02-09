@@ -33,7 +33,7 @@ config_dir = "config/sim_config/sim_sim"
 config_name = "cotrain_rendering.yaml"
 plans_root = "/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_2"
 
-suppress_output = False
+suppress_output = True
 
 # ----------------------------------------------------------
 
