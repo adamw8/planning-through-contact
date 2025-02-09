@@ -122,7 +122,7 @@ multi_run_config:
 ## Robot specific configs
 # sim_config
 scene_directive_name: 'planar_pushing_iiwa_plant_hydroelastic.yaml'
-default_joint_positions: [0.41, 0.88, -0.65, -1.45, 0.59, 1.01, 2.76]
+default_joint_positions: [0.6202, 1.0135, -0.5873, -1.4182, 0.6449, 0.8986, 2.98796]
 
 # position controller / robot station
 robot_station:
@@ -133,11 +133,11 @@ robot_station:
 ## Data Collection Config
 data_collection_config:
   _target_: planning_through_contact.simulation.environments.data_collection_table_environment.DataCollectionConfig
-  generate_plans: false
-  render_plans: true
+  generate_plans: true
+  render_plans: false
   convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
-  plans_dir: 'trajectories/physics_shift_level_2/run_0'
+  plans_dir: '/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_2_v1'
   rendered_plans_dir: 'trajectories_rendered/physics_shift_level_2'
   zarr_path: '/home/adam/gcs-diffusion/workspace/gcs-diffusion/data/planar_pushing_cotrain/physics_shift/physics_shift_level_2.zarr'
   policy_freq: 10.0
@@ -163,11 +163,11 @@ data_collection_config:
       - ${slider_goal_pose.y}
     buffer: 0.0
     seed: 0
-    num_plans: 750
+    num_plans: 300
     pusher_start_pose: ${pusher_start_pose}
     slider_goal_pose: ${slider_goal_pose}
     limit_rotations: false
-    noise_final_pose: true
+    noise_final_pose: false
     num_unique_plans: 2
     sort_plans: true
   ## Supercloud
