@@ -141,8 +141,9 @@ class DiffusionPolicyController(LeafSystem):
         for key, value in self._cfg_overrides.items():
             if isinstance(value, omegaconf.dictconfig.DictConfig):
                 for k, v in value.items():
-                    self._cfg[key][k] = v
-            else:
+                    if key in self._cfg:
+                        self._cfg[key][k] = v
+            elif key in self._cfg:
                 self._cfg[key] = value
 
         # self._cfg.training.device = self._device
