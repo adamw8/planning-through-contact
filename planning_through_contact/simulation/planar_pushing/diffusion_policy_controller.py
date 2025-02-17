@@ -146,6 +146,13 @@ class DiffusionPolicyController(LeafSystem):
             elif key in self._cfg:
                 self._cfg[key] = value
 
+        # update pretrained path if it exists
+        if "pretrained_checkpoint" in self._cfg and self._cfg["pretrained_checkpoint"]:
+            if not os.path.isabs(self._cfg["pretrained_checkpoint"]):
+                self._cfg["pretrained_checkpoint"] = self._diffusion_policy_path.joinpath(
+                    self._cfg["pretrained_checkpoint"]
+                )
+
         # self._cfg.training.device = self._device
         cls = hydra.utils.get_class(self._cfg._target_)
         workspace: BaseWorkspace
