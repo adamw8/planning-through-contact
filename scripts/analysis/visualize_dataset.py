@@ -25,6 +25,12 @@ def play_trajectory_videos(zarr_path, fps, stride=1, image_size=None):
     # Compute start indices for each episode
     episode_starts = [0] + episode_ends[:-1].tolist()
 
+    # Save last image for first trajectory
+    example_image = overhead_camera[episode_ends[1750] - 1]
+    example_image = cv2.cvtColor(example_image, cv2.COLOR_RGB2BGR)
+    cv2.imwrite("overhead_camera_images/overhead_camera.png", example_image)
+    return
+
     for i in range(0, len(episode_starts), stride):
         start_idx = episode_starts[i]
         end_idx = episode_ends[i]

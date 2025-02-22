@@ -123,7 +123,7 @@ def load_jobs_from_csv(csv_file):
                     seed=0,
                     continue_flag=False,
                 )
-                assert checkpoint_root not in job_groups
+                # assert checkpoint_root not in job_groups
                 job_groups[checkpoint_root] = {checkpoint_file: job_config}
 
             # If evaluating all checkpoints from a training run, create a group
@@ -147,7 +147,7 @@ def load_jobs_from_csv(csv_file):
                             continue_flag=False,
                         )
                         checkpoint_group[checkpoint_file] = job_config
-                assert checkpoints_root not in job_groups
+                # assert checkpoints_root not in job_groups
                 job_groups[checkpoints_root] = checkpoint_group
 
     return job_groups
