@@ -64,7 +64,8 @@ def compute_M(trajectories, M):
 
 def plot_comparison(avg_abs_errors, directory_labels, save_path=None):
     """
-    Plot normalized average absolute errors for multiple datasets in a 1x3 grid.
+    Plot normalized average absolute errors for multiple datasets in a 1x3 grid,
+    with the legend placed below the subplots.
 
     Args:
         avg_abs_errors (list of np.ndarray): List of error arrays for each dataset.
@@ -73,7 +74,7 @@ def plot_comparison(avg_abs_errors, directory_labels, save_path=None):
     D = avg_abs_errors[0].shape[1]  # Assuming 3 (X, Y, Theta)
     time_steps = np.linspace(0, 1, avg_abs_errors[0].shape[0])
 
-    fig, axs = plt.subplots(1, D, figsize=(9, 3), sharex=True)  # 1x3 layout
+    fig, axs = plt.subplots(1, D, figsize=(12, 4), sharex=True)  # 1x3 layout
 
     titles = [
         r"Normalized X Error",
@@ -85,7 +86,7 @@ def plot_comparison(avg_abs_errors, directory_labels, save_path=None):
         r"$\mathcal{D}_R$",
         "Real World Policy Rollout",
     ]
-    colors = plt.get_cmap("tab10")
+    colors = ["#4C72B0", "#FF6961", "#FFC20A"]
 
     def normalize_data(data):
         """Normalize data between 0 and 1 for each dimension."""
@@ -99,23 +100,34 @@ def plot_comparison(avg_abs_errors, directory_labels, save_path=None):
     for i in range(D):
         for idx, error in enumerate(normalized_errors):
             axs[i].plot(
-                time_steps, error[:, i], label=legend_labels[idx], color=colors(idx)
+                time_steps,
+                error[:, i],
+                label=legend_labels[idx],
+                color=colors[idx],
+                linewidth=3,
             )
 
-        axs[i].set_title(titles[i], fontsize=10)
-        axs[i].axhline(0, color="black", linestyle="--", linewidth=0.8, alpha=0.7)
+        axs[i].set_title(titles[i], fontsize=18)
+        axs[i].axhline(0, color="black", linestyle="--", linewidth=1, alpha=0.7)
         axs[i].set_xticks([0, 1])  # Keep only 0 and 1 on x-axis
-        axs[i].set_yticks([])  # Remove y-tick labels
-        axs[i].set_xlabel("Normalized Time", fontsize=9)
+        axs[i].set_yticks([0])  # Add a y-tick at 0
+        axs[i].tick_params(axis="both", labelsize=16)  # Increase tick label size
+        axs[i].set_xlabel("Normalized Time", fontsize=16)
 
-        # remove top and right spines
+        # Remove top and right spines
         axs[i].spines["top"].set_visible(False)
         axs[i].spines["right"].set_visible(False)
 
-    axs[2].legend()
+    # Add a figure-wide legend below all subplots
+    fig.legend(
+        legend_labels,
+        loc="lower center",
+        fontsize=16,
+        ncol=len(legend_labels),
+        frameon=False,
+    )
 
-    # fig.suptitle("Normalized Slider Error Over Normalized Time", fontsize=12)
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.1, 1, 1])  # Leave space at the bottom for legend
     if save_path:
         plt.savefig(save_path, bbox_inches="tight")
     plt.show()
