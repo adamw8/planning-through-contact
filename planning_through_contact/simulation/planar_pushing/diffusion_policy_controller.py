@@ -149,7 +149,9 @@ class DiffusionPolicyController(LeafSystem):
         # update pretrained path if it exists
         if "pretrained_checkpoint" in self._cfg and self._cfg["pretrained_checkpoint"]:
             if not os.path.isabs(self._cfg["pretrained_checkpoint"]):
-                self._cfg["pretrained_checkpoint"] = self._diffusion_policy_path.joinpath(
+                self._cfg[
+                    "pretrained_checkpoint"
+                ] = self._diffusion_policy_path.joinpath(
                     self._cfg["pretrained_checkpoint"]
                 )
 
@@ -278,7 +280,10 @@ class DiffusionPolicyController(LeafSystem):
         }
 
         # Note: Assuming sim is the first element in one hot encoding
-        if self._policy.one_hot_encoding_dim > 0:
+        if (
+            hasattr(self._policy, "one_hot_encoding_dim")
+            and self._policy.one_hot_encoding_dim > 0
+        ):
             data["one_hot_encoding"] = torch.zeros(
                 1, self._policy.one_hot_encoding_dim
             ).to(self._device)
