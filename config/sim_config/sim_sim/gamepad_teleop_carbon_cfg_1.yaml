@@ -58,6 +58,8 @@ diffusion_policy_config:
   device: 'cuda:0'
   cfg_overrides:
     n_action_steps: 8
+    policy:
+      w: 1
 use_hardware: false
 pusher_z_offset: 0.015
 camera_configs:
