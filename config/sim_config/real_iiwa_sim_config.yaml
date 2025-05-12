@@ -133,11 +133,11 @@ robot_station:
 data_collection_config:
   _target_: planning_through_contact.simulation.environments.data_collection_table_environment.DataCollectionConfig
   generate_plans: false
-  render_plans: false
-  convert_to_zarr: true
+  render_plans: true
+  convert_to_zarr: false
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
-  plans_dir: 'trajectories/sim_tee_data_large_0'
-  rendered_plans_dir: 'trajectories_rendered/sim_tee_data_noiseless'
+  plans_dir: 'trajectories/example_trajectory'
+  rendered_plans_dir: 'trajectories_rendered/example_trajectory'
   zarr_path: 'trajectories_rendered/sim_tee_data_noiseless.zarr'
   policy_freq: 10.0
   state_chunk_length: 1024

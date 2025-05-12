@@ -431,7 +431,7 @@ class DataCollectionTableEnvironment:
             time_step = self._sim_config.time_step * 10
             for t in np.append(np.arange(0, timeout, time_step), timeout):
                 self._simulator.AdvanceTo(t)
-                self._visualize_desired_slider_pose(t)
+                # self._visualize_desired_slider_pose(t)
         else:
             self._simulator.AdvanceTo(timeout)
         self.save_logs(recording_file, self._data_collection_dir)

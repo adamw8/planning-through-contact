@@ -84,7 +84,7 @@ def plot_comparison(avg_abs_errors, directory_labels, save_path=None):
     legend_labels = [
         r"$\mathcal{D}_S$",
         r"$\mathcal{D}_T$",
-        "Real World Policy Rollout",
+        r"Closed Loop Policy Rollout in $Target$ Sim",
     ]
     colors = ["#4C72B0", "#FF6961", "#FFC20A"]
 

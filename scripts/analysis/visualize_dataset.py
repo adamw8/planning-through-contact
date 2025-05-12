@@ -20,16 +20,54 @@ def play_trajectory_videos(zarr_path, fps, stride=1, image_size=None):
 
     # Extract overhead camera data and episode ends
     overhead_camera = dataset["data"]["overhead_camera"]
+    actions = dataset["data"]["action"][:]
     episode_ends = dataset["meta"]["episode_ends"][:]
+
+    # # Save last image for first trajectory
+    # for i in range(20):
+    #     import random
+    #     index = random.randint(0, len(episode_ends) - 1)
+    #     example_image = overhead_camera[episode_ends[index] - 1]
+    #     example_image = cv2.cvtColor(example_image, cv2.COLOR_RGB2BGR)
+    #     cv2.imwrite(f"overhead_camera_images/overhead_camera_{i}.png", example_image)
+
+    # for index in range(len(episode_ends)):
+    index = 3
+    print(f"Episode {index + 1}: {episode_ends[index]}")
+    start_index = 150
+    index += 1
+    trajectory = actions[episode_ends[index - 1] - 1 : episode_ends[index]]
+    trajectory_images = overhead_camera[
+        episode_ends[index - 1] - 1 : episode_ends[index]
+    ]
+    indices = [
+        start_index,
+        start_index + 10,
+        start_index + 20,
+        start_index + 30,
+        start_index + 40,
+    ]
+    # indices = np.arange(0, len(trajectory) - 1, 10).astype(int)
+    for i in indices:
+        print(trajectory[i])
+
+    # Show the images
+    for i in indices:
+        print(i)
+        image = trajectory_images[i]
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        cv2.imshow("image", image)
+        cv2.waitKey(0)
+
+        # save the image
+        image = trajectory_images[i]
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(f"anchor_figure/real_{i}.png", image)
+
+    return
 
     # Compute start indices for each episode
     episode_starts = [0] + episode_ends[:-1].tolist()
-
-    # Save last image for first trajectory
-    example_image = overhead_camera[episode_ends[1750] - 1]
-    example_image = cv2.cvtColor(example_image, cv2.COLOR_RGB2BGR)
-    cv2.imwrite("overhead_camera_images/overhead_camera.png", example_image)
-    return
 
     for i in range(0, len(episode_starts), stride):
         start_idx = episode_starts[i]

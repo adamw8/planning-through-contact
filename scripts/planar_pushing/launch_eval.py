@@ -26,7 +26,7 @@ BASE_COMMAND = [
 
 # ---------------------------------------------------------
 # Example Usage:
-# python launch_simulations.py --csv-path /path/to/jobs.csv --max-concurrent-jobs 8
+# python launch_evals.py --csv-path /path/to/jobs.csv --max-concurrent-jobs 8
 #
 # CSV file format:
 # checkpoint_path,run_dir,config_name (optional)
@@ -83,6 +83,19 @@ def parse_arguments():
         type=int,
         default=8,
         help="Maximum number of concurrent jobs (default: 8).",
+    )
+    parser.add_argument(
+        "--num-trials-per-round",
+        type=int,
+        nargs="+",
+        default=[50, 50, 100],
+        help="List of number of trials per round (default: [50, 50, 100]).",
+    )
+    parser.add_argument(
+        "--drop-threshold",
+        type=float,
+        default=0.05,
+        help="Threshold for dropping checkpoints (default: 0.05).",
     )
     return parser.parse_args()
 
@@ -401,8 +414,8 @@ def main():
     args = parse_arguments()
     csv_file = args.csv_path
     max_concurrent_jobs = args.max_concurrent_jobs
-    num_trials = [50, 50, 100]  # total of 200
-    drop_threshold = 0.05  # Seems reasonable from visualization tests
+    num_trials = args.num_trials_per_round  # default: [50, 50, 100]
+    drop_threshold = args.drop_threshold  # default: 0.05
 
     job_groups = load_jobs_from_csv(csv_file)
     if not validate_job_groups(job_groups):
