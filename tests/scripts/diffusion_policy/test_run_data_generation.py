@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-PYTHON_SCRIPT = "scripts/planar_pushing/diffusion_policy/run_data_generation.py"
+PYTHON_SCRIPT = "scripts/planar_pushing/run_data_generation.py"
 
 
 @pytest.fixture

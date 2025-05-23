@@ -8,7 +8,7 @@ def run_data_generation_script(
 ):
     seed = datetime.now().timestamp()
     command = (
-        f"python scripts/planar_pushing/diffusion_policy/run_data_generation.py "
+        f"python scripts/planar_pushing/run_data_generation.py "
         f"--config-dir={config_dir} "
         f"--config-name {config_name} "
         f"data_collection_config.plans_dir={plans_dir} "
@@ -29,13 +29,11 @@ def run_data_generation_script(
 start_index = 0
 end_index = 59
 
-config_dir = "config/sim_config/sim_sim/physics_shift_no_visual_gap"
-config_name = "level_1.yaml"
-plans_root = (
-    "/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_1"
-)
+config_dir = "config/sim_config"
+config_name = "real_iiwa_sim_config.yaml"
+plans_root = "/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data"
 
-suppress_output = True
+suppress_output = False
 
 # ----------------------------------------------------------
 
