@@ -65,7 +65,7 @@ logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 @hydra.main(
     version_base=None,
-    config_path=str(pathlib.Path(__file__).parents[3].joinpath("config", "sim_config")),
+    config_path=str(pathlib.Path(__file__).parents[2].joinpath("config", "sim_config")),
 )
 def main(cfg: OmegaConf):
     """

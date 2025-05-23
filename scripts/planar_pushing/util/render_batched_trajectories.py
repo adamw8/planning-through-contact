@@ -31,7 +31,9 @@ end_index = 59
 
 config_dir = "config/sim_config/sim_sim/physics_shift_no_visual_gap"
 config_name = "level_1.yaml"
-plans_root = "/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_1"
+plans_root = (
+    "/home/adam/workspace/planning-through-contact/trajectories/physics_shift_level_1"
+)
 
 suppress_output = True
 
