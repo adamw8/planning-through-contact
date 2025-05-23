@@ -107,6 +107,7 @@ class MultiRunConfig:
         self.dataset_path = dataset_path
         self.convex_hull_scale = convex_hull_scale
         self.num_trials_to_record = num_trials_to_record
+        self.pre_compute_initial_conditions = pre_compute_initial_conditions
 
     def __str__(self):
         slider_pose_str = f"initial_slider_poses: {self.initial_slider_poses}"
@@ -178,6 +179,7 @@ class PlanarPushingSimConfig:
     slider_physical_properties: PhysicalProperties = None
     arbitrary_shape_pickle_path: str = ""
     arbitrary_shape_rgba: np.ndarray = np.array([0.0, 0.0, 0.0, 1.0])
+    default_joint_positions: np.ndarray = None
 
     @classmethod
     def from_traj(cls, trajectory: PlanarPushingTrajectory, **kwargs):

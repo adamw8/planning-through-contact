@@ -93,6 +93,7 @@ multi_run_config:
   evaluate_final_pusher_position: true
   evaluate_final_slider_rotation: true
   slider_physical_properties: ${physical_properties}
+  pre_compute_initial_conditions: true
 
 ## Robot specific configs
 # sim_config
@@ -118,7 +119,6 @@ data_collection_config:
   convert_to_zarr: true
   convert_to_zarr_reduce: false # Supercloud flag to perform "reduce" step
   plans_dir: 'tests/scripts/diffusion_policy/plans'
-  # rendered_plans_dir: 'trajectories_rendered/test'
   rendered_plans_dir: 'tests/scripts/diffusion_policy/rendered_plans'
   zarr_path: 'tests/scripts/diffusion_policy/rendered_plans/data.zarr'
   policy_freq: 10.0
