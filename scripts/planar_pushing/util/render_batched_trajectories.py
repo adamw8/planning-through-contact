@@ -1,3 +1,4 @@
+import argparse
 import os
 import time
 from datetime import datetime
@@ -22,28 +23,58 @@ def run_data_generation_script(
     os.system(command)
 
 
-# Adjust these values
-# ----------------------------------------------------------
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Render batched trajectories with configurable parameters"
+    )
+    parser.add_argument(
+        "--start-index",
+        type=int,
+        required=True,
+        help="Starting index (inclusive) for the runs",
+    )
+    parser.add_argument(
+        "--end-index",
+        type=int,
+        required=True,
+        help="Ending index (inclusive) for the runs",
+    )
+    parser.add_argument(
+        "--config-dir",
+        type=str,
+        required=True,
+        help="Directory containing the configuration files",
+    )
+    parser.add_argument(
+        "--config-name", type=str, required=True, help="Name of the configuration file"
+    )
+    parser.add_argument(
+        "--plans-root",
+        type=str,
+        required=True,
+        help="Root directory for storing the plans",
+    )
+    parser.add_argument(
+        "--suppress-output",
+        action="store_true",
+        default=False,
+        help="Suppress output from the data generation script",
+    )
 
-# indice range is INCLUSIVE
-start_index = 0
-end_index = 59
+    return parser.parse_args()
 
-config_dir = "config/sim_config"
-config_name = "real_iiwa_sim_config.yaml"
-plans_root = "/home/adam/workspace/planning-through-contact/trajectories/sim_tee_data"
-
-suppress_output = False
-
-# ----------------------------------------------------------
 
 if __name__ == "__main__":
+    args = parse_args()
+
     # Loop through the indices and execute the command
-    for i in range(start_index, end_index + 1):
-        plans_dir = f"{plans_root}/run_{i}"
+    for i in range(args.start_index, args.end_index + 1):
+        plans_dir = f"{args.plans_root}/run_{i}"
         print(plans_dir)
         start = time.time()
-        run_data_generation_script(config_dir, config_name, plans_dir, suppress_output)
+        run_data_generation_script(
+            args.config_dir, args.config_name, plans_dir, args.suppress_output
+        )
         print(
             f"Finished rendering plans for run {i} in {time.time() - start:.2f} seconds.\n"
         )

@@ -126,15 +126,18 @@ multi_run_config:
   slider_goal_pose: ${slider_goal_pose}
   workspace_width: 0.4
   workspace_height: 0.3
+  # Success criteria
   trans_tol: 0.015 # tol for pusher is 1.5x higher
   rot_tol: 3.5 # degrees
   evaluate_final_pusher_position: true
   evaluate_final_slider_rotation: true
-  success_criteria: 'tolerance'
+  success_criteria: 'tolerance' # 'tolerance' or 'convex_hull'
+  # Dataset path is only required when using
+  # the convex_hull success criteria
   dataset_path: /home/adam/workspace/gcs-diffusion/data/planar_pushing_cotrain/sim_sim_tee_data.zarr
   slider_physical_properties: ${physical_properties}
   pre_compute_initial_conditions: false
-  num_trials_to_record: 20
+  num_trials_to_record: 20 # number of trials to record in the meshcat recording
 
 ## Robot specific configs
 # sim_config
