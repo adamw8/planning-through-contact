@@ -91,10 +91,12 @@ export QT_QPA_PLATFORM=offscreen
 
 Both the simulation environment and the data generation process are specified by a config file. Here is an example usage of the data generation script:
 ```
-python scripts/planar_pushing/run_data_generation.py --config-dir config/sim_config --config-name example_sim_config.yaml
+python scripts/planar_pushing/run_data_generation.py \
+    --config-dir config/sim_config \
+    --config-name example_sim_config.yaml
 ```
 
-`config/sim_config/example_sim_config.yaml` is a good starting template. It provides comments for the various parameters and points to other configs that can be used as reference for more advanced features.
+`config/sim_config/example_sim_config.yaml` is a good starting template.
 
 The data generation runs in 3 phases (which can all be configured and ran independently).
 1. **Plan Generation** (if `generate_plans: true`): [Generates plans](https://arxiv.org/abs/2402.10312) and saves them to `plans_dir`.
@@ -108,7 +110,7 @@ If you run into LCM issues with rendering plans, see [Rendering batched trajecto
 
 **Note:** For historical reasons, the *target sim* is referred to as *sim-sim* in some parts of the codebase.
 
-**Note:** When using *target sim*, do not use the custom version of Drake. Instead, use `drake 1.27.0`.
+When using *target sim*, do not use the custom version of Drake. Instead, use `drake 1.27.0`.
 
 All *target sim* config files are located in `config/sim_config/sim_sim`. The environment used in the [paper](https://arxiv.org/abs/2503.22634) was `gamepad_teleop_carbon.yaml`.
 
@@ -119,7 +121,7 @@ python scripts/planar_pushing/run_gamepad_teleop.py --config-dir <dir> --config-
 ```
 After running the script, open the meshcat. You will be prompted in the terminal to press any key to connect the gamepad controller.
 
-Press `A` to start data collection. While data collection is active, press `A` to end data collection and save the trajectory; press `B` to end data collection and discard the trajectory. Press `X` at anytime to terminate the script.
+Press `A` to start data collection. While data collection is active, press `A` to end data collection and save the trajectory. Alternatively, press `B` to end data collection and discard the trajectory. Press `X` at anytime to terminate the script.
 
 **Note:** The button mappings on the gamepads vary from controller to controller! To test your mapping, visit https://hardwaretester.com/gamepad. You may need to edit `self.button_index` in `planning_through_contact/simulation/planar_pushing/gamepad_controller.py`.
 
