@@ -370,6 +370,6 @@ def main(cfg: OmegaConf):
 if __name__ == "__main__":
     """
     Configure sim config through hydra yaml file
-    Ex: python scripts/diffusion_policy/planar_pushing/run_gamepad_teleop.py --config-dir <dir> --config-name <file>
+    Ex: python scripts/planar_pushing/run_gamepad_teleop.py --config-dir <dir> --config-name <file>
     """
     main()

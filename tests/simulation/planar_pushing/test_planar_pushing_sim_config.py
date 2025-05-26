@@ -126,6 +126,7 @@ def sim_config() -> PlanarPushingSimConfig:
             mu_static=0.5,
             mesh_resolution_hint=0.01,
         ),
+        arbitrary_shape_pickle_path=None,
     )
 
 
