@@ -1,0 +1,2 @@
+checkpoint_path,run_dir,config_name
+/home/abhinav/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_inception/10_obs_h_24_no_inception, eval/context_length_exp_adam_data_inception/10_obs_h_24_no_inception, gamepad_teleop_carbon.yaml

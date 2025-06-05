@@ -1,0 +1,2 @@
+checkpoint_path,run_dir,config_name
+/home/abhinav/RLG/gcs-diffusion/data/outputs/sim_sim/cotrain_cfg/50_2000_1:3, eval/sim_sim/cotrain_cfg/50_2000_1:3_2, gamepad_teleop_carbon_cfg_2.yaml

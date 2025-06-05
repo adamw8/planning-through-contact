@@ -33,9 +33,9 @@ from planning_through_contact.simulation.controllers.gamepad_controller_source i
 from planning_through_contact.simulation.controllers.robot_system_base import (
     RobotSystemBase,
 )
-from planning_through_contact.simulation.controllers.teleop_position_source import (
-    TeleopPositionSource,
-)
+# from planning_through_contact.simulation.controllers.teleop_position_source import (
+#     TeleopPositionSource,
+# )
 from planning_through_contact.simulation.planar_pushing.planar_pushing_sim_config import (
     PlanarPushingSimConfig,
 )

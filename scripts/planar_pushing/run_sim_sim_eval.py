@@ -106,6 +106,7 @@ class SimSimEval:
             create_arbitrary_shape_sdf_file(cfg, self.sim_config)
 
         # Diffusion Policy
+        print(self.sim_config.diffusion_policy_config)
         position_source = DiffusionPolicySource(self.sim_config.diffusion_policy_config)
 
         # Set up position controller
