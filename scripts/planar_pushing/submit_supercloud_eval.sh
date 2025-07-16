@@ -37,7 +37,7 @@ RUN_DIR="eval/ambient_diffusion/planar_pushing/test_sc"
 CONFIG_NAME="gamepad_teleop_carbon.yaml"
 
 rm "$CONFIG_FILE"
-rm "$RUN_DIR"
+rm -rf "$RUN_DIR"
 cat <<EOF > "$CONFIG_FILE"
 checkpoint_path,run_dir,config_name
 $CHECKPOINT_PATH, $RUN_DIR, $CONFIG_NAME
