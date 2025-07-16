@@ -48,7 +48,7 @@ $CHECKPOINT_PATH, $RUN_DIR, $CONFIG_NAME
 EOF
 
 echo "[submit_supercloud_eval.sh] Running eval command..."
-python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cuda" --max-concurrent-jobs 1 --num-trials 50 50 100
+python -u scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cuda" --max-concurrent-jobs 1 --num-trials 50 50 100
 
 # Remove temporary config file
 rm "$CONFIG_FILE"
