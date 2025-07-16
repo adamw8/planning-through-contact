@@ -32,7 +32,7 @@ START_TIME=$(date +%s)
 echo "[submit_supercloud_eval.sh] Creating temporary config file"
 
 CONFIG_FILE="config/launch_eval_tmp.txt"
-CHECKPOINT_PATH="~/workspace/ambient-diffusion-policy/data/outputs/ambient_diffusion/planar_pushing/denoising_loss/sigma_min/50_2000_t_min_04_epsilon/checkpoints/epoch\=0030-val_loss_0\=0.0269-val_ddim_mse_0\=0.0002.ckpt"
+CHECKPOINT_PATH="~/workspace/ambient-diffusion-policy/data/outputs/ambient_diffusion/planar_pushing/denoising_loss/sigma_min/50_2000_t_min_04_epsilon/checkpoints/epoch=0030-val_loss_0=0.0269-val_ddim_mse_0=0.0002.ckpt"
 RUN_DIR="eval/ambient_diffusion/planar_pushing/test_sc"
 CONFIG_NAME="gamepad_teleop_carbon.yaml"
 
