@@ -117,6 +117,7 @@ def load_jobs_from_csv(csv_file):
         reader = csv.DictReader(f)
         for row in reader:
             checkpoint_path = row.get("checkpoint_path", "").strip()
+            checkpoint_path = os.path.abspath(os.path.expanduser(checkpoint_path))
             run_dir = row.get("run_dir", "").strip()
             config_name = row.get("config_name", CONFIG_NAME).strip()
 
