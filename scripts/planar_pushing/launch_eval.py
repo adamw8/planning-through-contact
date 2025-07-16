@@ -85,6 +85,12 @@ def parse_arguments():
         help="Maximum number of concurrent jobs (default: 8).",
     )
     parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda",
+        help="Device to run the evaluation on (default: cuda).",
+    )
+    parser.add_argument(
         "--num-trials-per-round",
         type=int,
         nargs="+",
@@ -117,6 +123,7 @@ def load_jobs_from_csv(csv_file):
         reader = csv.DictReader(f)
         for row in reader:
             checkpoint_path = row.get("checkpoint_path", "").strip()
+            checkpoint_path = os.path.abspath(os.path.expanduser(checkpoint_path))
             run_dir = row.get("run_dir", "").strip()
             config_name = row.get("config_name", CONFIG_NAME).strip()
 
@@ -166,7 +173,9 @@ def load_jobs_from_csv(csv_file):
     return job_groups
 
 
-def run_simulation(job_config, job_number, total_jobs, round_number, total_rounds):
+def run_simulation(
+    job_config, job_number, total_jobs, round_number, total_rounds, device
+):
     """Run a single simulation with specified checkpoint, run directory, and config name."""
     checkpoint_path = job_config.checkpoint_path
     run_dir = job_config.run_dir
@@ -179,6 +188,7 @@ def run_simulation(job_config, job_number, total_jobs, round_number, total_round
     command = BASE_COMMAND + [
         f"--config-name={config_name}",
         f'diffusion_policy_config.checkpoint="{checkpoint_path}"',
+        f'diffusion_policy_config.device="{device}"',
         f'hydra.run.dir="{run_dir}"',
         f"multi_run_config.seed={seed}",
         f"multi_run_config.num_runs={num_trials}",
@@ -414,6 +424,7 @@ def main():
     args = parse_arguments()
     csv_file = args.csv_path
     max_concurrent_jobs = args.max_concurrent_jobs
+    device = args.device
     num_trials = args.num_trials_per_round  # default: [50, 50, 100]
     drop_threshold = args.drop_threshold  # default: 0.05
 
@@ -455,6 +466,7 @@ def main():
                     len(jobs_to_run),
                     round_number,
                     len(num_trials),
+                    device,
                 )
                 futures[future] = job
                 time.sleep(1)  # prevent syncing issues with arbitrary_shape.sdf

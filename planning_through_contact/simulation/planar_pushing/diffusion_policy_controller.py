@@ -156,7 +156,7 @@ class DiffusionPolicyController(LeafSystem):
                     self._cfg["pretrained_checkpoint"]
                 )
 
-        # self._cfg.training.device = self._device
+        self._cfg.training.device = str(self._device)
         cls = hydra.utils.get_class(self._cfg._target_)
         workspace: BaseWorkspace
         workspace = cls(self._cfg)
