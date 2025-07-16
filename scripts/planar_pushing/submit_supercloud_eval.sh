@@ -37,11 +37,13 @@ RUN_DIR="eval/ambient_diffusion/planar_pushing/test_sc"
 CONFIG_NAME="gamepad_teleop_carbon.yaml"
 
 rm "$CONFIG_FILE"
+rm "$RUN_DIR"
 cat <<EOF > "$CONFIG_FILE"
 checkpoint_path,run_dir,config_name
 $CHECKPOINT_PATH, $RUN_DIR, $CONFIG_NAME
 EOF
 
+# TODO: check if anything needs to be done to switch device to cpu
 echo "[submit_supercloud_eval.sh] Running eval command..."
 python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --max-concurrent-jobs 1 --num-trials 50 50 100
 
