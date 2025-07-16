@@ -217,7 +217,9 @@ def run_simulation(
         num_trials = len(summary["trial_times"])
         success_rate = num_successful_trials / num_trials
     else:
-        print(f"\n❌ Failed: {run_dir}\nError: {result.stderr}")
+        stderr_lines = result.stderr.strip().splitlines()
+        last_250 = stderr_lines[-250:] if len(stderr_lines) > 0 else []
+        print(f"\n❌ Failed: {run_dir}\nError (last 250lines)\n: {last_250}")
         success_rate = None
 
     print("\n" + "=" * 50)
