@@ -43,9 +43,9 @@ checkpoint_path,run_dir,config_name
 $CHECKPOINT_PATH, $RUN_DIR, $CONFIG_NAME
 EOF
 
-# TODO: check if anything needs to be done to switch device to cpu
 echo "[submit_supercloud_eval.sh] Running eval command..."
-python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --max-concurrent-jobs 1 --num-trials 50 50 100
+# TODO: may need to add argument to override device
+python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cpu"--max-concurrent-jobs 1 --num-trials 50 50 100
 
 # Remove temporary config file
 rm "$CONFIG_FILE"
