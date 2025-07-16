@@ -37,15 +37,13 @@ RUN_DIR="eval/ambient_diffusion/planar_pushing/test_sc"
 CONFIG_NAME="gamepad_teleop_carbon.yaml"
 
 rm "$CONFIG_FILE"
-rm -rf "$RUN_DIR"
 cat <<EOF > "$CONFIG_FILE"
 checkpoint_path,run_dir,config_name
 $CHECKPOINT_PATH, $RUN_DIR, $CONFIG_NAME
 EOF
 
 echo "[submit_supercloud_eval.sh] Running eval command..."
-# TODO: may need to add argument to override device
-python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cpu"--max-concurrent-jobs 1 --num-trials 50 50 100
+python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cpu" --max-concurrent-jobs 1 --num-trials 50 50 100
 
 # Remove temporary config file
 rm "$CONFIG_FILE"
