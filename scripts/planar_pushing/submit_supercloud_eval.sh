@@ -1,7 +1,12 @@
 #!/bin/bash
 
+# NOTE: adjust device type in python command accordingly (e.g. cuda, cpu)
+
 # Usage (cpu nodes)
 # LLsub scripts/planar_pushing/submit_supercloud_eval.sh -s 24
+
+# Usage (gpu nodes)
+# LLsub scripts/planar_pushing/submit_supercloud_eval.sh -s 20 -g volta:1
 
 # Initialize and Load Modules
 echo "[submit_supercloud_eval.sh] Loading modules and virtual environment"
@@ -43,7 +48,7 @@ $CHECKPOINT_PATH, $RUN_DIR, $CONFIG_NAME
 EOF
 
 echo "[submit_supercloud_eval.sh] Running eval command..."
-python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cpu" --max-concurrent-jobs 1 --num-trials 50 50 100
+python scripts/planar_pushing/launch_eval.py --csv-path "$CONFIG_FILE" --device "cuda" --max-concurrent-jobs 1 --num-trials 50 50 100
 
 # Remove temporary config file
 rm "$CONFIG_FILE"
