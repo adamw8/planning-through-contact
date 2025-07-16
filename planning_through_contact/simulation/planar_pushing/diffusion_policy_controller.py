@@ -58,11 +58,12 @@ class DiffusionPolicyController(LeafSystem):
         self._device = torch.device(device)
         self._cfg_overrides = cfg_overrides
         self._load_policy_from_checkpoint(self._checkpoint)
+        self.low_dim_obs_key = self._get_low_dim_obs_key()
 
         # get parameters
         self._obs_horizon = self._cfg.n_obs_steps
         self._action_steps = self._cfg.n_action_steps
-        self._state_dim = self._cfg.shape_meta.obs.agent_pos.shape[0]
+        self._state_dim = self._cfg.shape_meta.obs[self.low_dim_obs_key]["shape"][0]
         self._action_dim = self._cfg.shape_meta.action.shape[0]
         self._target_dim = self._cfg.policy.target_dim
         self._B = 1  # batch size is 1
@@ -171,6 +172,33 @@ class DiffusionPolicyController(LeafSystem):
         self._policy.to(self._device)
         self._policy.eval()
 
+    def _get_low_dim_obs_key(self):
+        """
+        Get the key for the low-dimensional observation (planar pose observations)
+
+        Note: this function was designed to support newer evaluation configs
+        (which use 'state' as the obs key) and older configs (which use
+        'agent_pos' as the obs key).
+
+        We use the terminology "low_dim" to be consistent with the
+        diffusion policy codebase.
+
+        Returns:
+            str: the key for the low-dimensional observation
+        """
+        low_dim_keys = []
+        for key, value in self._cfg.policy.shape_meta.obs.items():
+            if value["type"] == "low_dim":
+                low_dim_keys.append(key)
+        assert (
+            len(low_dim_keys) == 1
+        ), "Expected exactly one low dim obs key for planar pushing"
+        assert low_dim_keys[0] in [
+            "state",
+            "agent_pos",
+        ], "Expected state or agent_pos key for low dim obs"
+        return low_dim_keys[0]
+
     def DoCalcOutput(self, context: Context, output):
         time = context.get_time()
         if self._received_reset_signal:
@@ -274,7 +302,7 @@ class DiffusionPolicyController(LeafSystem):
 
         data = {
             "obs": {
-                "agent_pos": state_tensor.to(self._device),  # 1, T_obs, D_x
+                self.low_dim_obs_key: state_tensor.to(self._device),  # 1, T_obs, D_x
             },
             "target": target_tensor.to(self._device),  # 1, D_t
         }
