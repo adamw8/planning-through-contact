@@ -1,2 +1,3 @@
 checkpoint_path,run_dir,config_name
-/home/abhinav/RLG/gcs-diffusion/data/outputs/sim_sim/cotrain_cfg/50_2000_1:3, eval/sim_sim/cotrain_cfg/50_2000_1:3_2, gamepad_teleop_carbon_cfg_2.yaml
+/home/abhinav/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_resnet_plus_transformer/cls_token_only_causal/12_obs/, eval/context_length_exp_adam_data_resnet_plus_transformer/cls_token_only_causal/12_obs/, gamepad_teleop_carbon.yaml
+/home/abhinav/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_resnet_plus_transformer/cls_token_only_causal/16_obs/, eval/context_length_exp_adam_data_resnet_plus_transformer/cls_token_only_causal/16_obs/, gamepad_teleop_carbon.yaml

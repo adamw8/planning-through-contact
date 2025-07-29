@@ -97,6 +97,12 @@ def parse_arguments():
         default=0.05,
         help="Threshold for dropping checkpoints (default: 0.05).",
     )
+    parser.add_argument(
+        "--use_PTP_realignment", 
+        type=bool,
+        default=False,
+        help="Whether to use PTP realignment (default: False).",
+    )
     return parser.parse_args()
 
 

@@ -12,7 +12,7 @@ import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import omegaconf
-
+from omegaconf import OmegaConf
 # Diffusion Policy imports
 import torch
 from diffusion_policy.dataset.base_dataset import BaseImageDataset
@@ -31,6 +31,29 @@ logger = logging.getLogger(__name__)
 # Set the print precision to 4 decimal places
 np.set_printoptions(precision=4)
 
+import torch.nn.functional as F
+
+USE_PTP_REALIGN = False 
+USE_LOW_PASS_ONLY = False 
+INFER_FROZEN_POLICY = False
+EXCLUDE_OPTIMIZER = False
+USE_DDIM = True
+
+def gaussian_kernel(kernel_size=9, sigma=3, channels=3):
+    """Create a Gaussian kernel for convolution."""
+    # Create 1D Gaussian
+    coords = torch.arange(kernel_size).float() - (kernel_size - 1) / 2.
+    g = torch.exp(-(coords**2) / (2 * sigma**2))
+    g = g / g.sum()
+    # Create 2D Gaussian
+    g2 = g[:, None] * g[None, :]
+    kernel = g2.expand(channels, 1, kernel_size, kernel_size)
+    return kernel
+
+def low_pass_filter(x, kernel):
+    """Apply low-pass (Gaussian blur) filter to input tensor x."""
+    padding = kernel.shape[-1] // 2
+    return F.conv2d(x, kernel, padding=padding, groups=x.shape[1])
 
 class DiffusionPolicyController(LeafSystem):
     def __init__(
@@ -64,8 +87,25 @@ class DiffusionPolicyController(LeafSystem):
         self._action_steps = self._cfg.n_action_steps
         self._state_dim = self._cfg.shape_meta.obs.agent_pos.shape[0]
         self._action_dim = self._cfg.shape_meta.action.shape[0]
-        self._target_dim = self._cfg.policy.target_dim
+        try: 
+            self._target_dim = self._cfg.policy.target_dim
+        except: 
+            self._target_dim = 3
         self._B = 1  # batch size is 1
+        if USE_PTP_REALIGN: 
+            self._B = 10
+
+        if USE_LOW_PASS_ONLY: 
+            self.wrist_kernel = gaussian_kernel(
+                kernel_size=9, 
+                sigma=3, 
+                channels=3
+            )
+            self.overhead_kernel = gaussian_kernel(
+                kernel_size=9, 
+                sigma=3, 
+                channels=3
+            )
 
         # indexing parameters for action predictions
         # Note: this used to be self._state = self._obs_horizon - 1
@@ -74,6 +114,8 @@ class DiffusionPolicyController(LeafSystem):
 
         # variables for DoCalcOutput
         self._actions = deque([], maxlen=self._action_steps)
+        if USE_PTP_REALIGN: 
+            self._actions_to_keep = deque([], maxlen=self._obs_horizon)
         self._current_action = np.array(
             [
                 self._initial_pusher_pose.x,
@@ -156,10 +198,17 @@ class DiffusionPolicyController(LeafSystem):
                 )
 
         # self._cfg.training.device = self._device
+        if INFER_FROZEN_POLICY: 
+            OmegaConf.set_struct(self._cfg.policy, False)
+            self._cfg.policy.inference_loading = True
+            OmegaConf.set_struct(self._cfg.policy, True)
         cls = hydra.utils.get_class(self._cfg._target_)
         workspace: BaseWorkspace
         workspace = cls(self._cfg)
-        workspace.load_payload(payload, exclude_keys=None, include_keys=None)
+        if EXCLUDE_OPTIMIZER == True: 
+            workspace.load_payload(payload, exclude_keys=["optimizer"], include_keys=None)
+        else: 
+            workspace.load_payload(payload, exclude_keys=None, include_keys=None)
         self._normalizer = self._load_normalizer()
 
         # get policy from workspace
@@ -202,8 +251,26 @@ class DiffusionPolicyController(LeafSystem):
             start_time = pytime.time()
             with torch.no_grad():
                 action_prediction = self._policy.predict_action(
-                    obs_dict, use_DDIM=True
-                )["action_pred"][0]
+                    obs_dict, use_DDIM=USE_DDIM
+                )["action_pred"]
+
+                action_prediction_check = action_prediction
+                if USE_PTP_REALIGN:
+                    # past_actions = obs_dict["obs"]["agent_pos"][0, :, :2]
+                    # differences = action_prediction[:, :past_actions.shape[0], :] - past_actions
+                    # distances = torch.sum(differences ** 2, dim=(1, 2))
+                    # best_match_index = torch.argmin(distances)
+                    # action_prediction = action_prediction[best_match_index]
+                    if len(self._actions_to_keep) < self._policy.n_obs_steps: 
+                        action_prediction = action_prediction[0]
+                    else: 
+                        past_actions = torch.tensor(list(self._actions_to_keep)[-self._obs_horizon:], device=action_prediction.device)
+                        differences = action_prediction[:, :past_actions.shape[0], :] - past_actions 
+                        distances = torch.sum(differences ** 2, dim=(1, 2))
+                        best_match_index = torch.argmin(distances)
+                        action_prediction = action_prediction[best_match_index]
+                else: 
+                    action_prediction = action_prediction[0]
 
                 # Save logs
                 if self._save_logs:
@@ -223,8 +290,16 @@ class DiffusionPolicyController(LeafSystem):
                     )
 
             actions = action_prediction[self._start : self._end]
-            for action in actions:
-                self._actions.append(action.cpu().numpy())
+            self._actions.extend(actions.cpu().numpy())
+            if USE_PTP_REALIGN:
+                self._actions_to_keep.extend(actions.cpu().numpy())
+
+            # for action in actions:
+            #     self._actions.append(action.cpu().numpy())
+            #     if USE_PTP_REALIGN:
+            #         self._actions_to_keep.append(action.cpu().numpy())
+            #         breakpoint()
+            #         assert len(self._actions) == self._action_steps
 
             if self._debug:
                 print(
@@ -259,6 +334,8 @@ class DiffusionPolicyController(LeafSystem):
         if reset_position is not None:
             self._current_action = reset_position
         self._actions.clear()
+        if USE_PTP_REALIGN: 
+            self._actions_to_keep.clear()
         self._pusher_pose_deque.clear()
         for image_deque in self._image_deque_dict.values():
             image_deque.clear()
@@ -269,9 +346,14 @@ class DiffusionPolicyController(LeafSystem):
     ):
         state_tensor = torch.cat(
             [torch.from_numpy(obs) for obs in obs_deque], dim=0
-        ).reshape(self._B, self._obs_horizon, self._state_dim)
+        ).reshape(1, self._obs_horizon, self._state_dim)
         target_tensor = torch.from_numpy(target).reshape(1, self._target_dim)  # 1, D_t
-
+        
+        if USE_PTP_REALIGN: 
+            # Realign the state tensor to match the batch size
+            state_tensor = state_tensor.repeat(self._B, 1, 1)
+            target_tensor = target_tensor.repeat(self._B, 1)
+        
         data = {
             "obs": {
                 "agent_pos": state_tensor.to(self._device),  # 1, T_obs, D_x
@@ -298,12 +380,26 @@ class DiffusionPolicyController(LeafSystem):
                 ],
                 dim=0,
             ).reshape(
-                self._B,
+                1,
                 self._obs_horizon,
                 self._camera_shape_dict[camera][0],  # C
                 self._camera_shape_dict[camera][1],  # H
                 self._camera_shape_dict[camera][2],  # W
             )
+            if USE_PTP_REALIGN:
+                # Realign the image tensor to match the batch size
+                img_tensor = img_tensor.repeat(self._B, 1, 1, 1, 1)
+            
+            if USE_LOW_PASS_ONLY and camera == "wrist_camera": 
+                img_tensor = low_pass_filter(
+                    img_tensor.squeeze(0), self.wrist_kernel.to(dtype=img_tensor.dtype)
+                ).unsqueeze(0)
+
+            if USE_LOW_PASS_ONLY and camera == "overhead_camera": 
+                img_tensor = low_pass_filter(
+                    img_tensor.squeeze(0), self.overhead_kernel.to(dtype=img_tensor.dtype)
+                ).unsqueeze(0)
+            
             data["obs"][camera] = img_tensor.to(self._device)  # 1, T_obs, C, H, W
 
         return data

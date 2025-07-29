@@ -1,0 +1,3 @@
+checkpoint_path,run_dir,config_name
+/home/abhinav/RLG/gcs-diffusion/data/outputs/planar_pushing/diffusion_transformer_training/context_length_exp_adam_data/2_obs/, eval/planar_pushing/diffusion_transformer_training/context_length_exp_adam_data/2_obs, gamepad_teleop_carbon.yaml
+/home/abhinav/RLG/gcs-diffusion/data/outputs/planar_pushing/diffusion_transformer_training/context_length_exp_adam_data/5_obs/, eval/planar_pushing/diffusion_transformer_training/context_length_exp_adam_data/5_obs, gamepad_teleop_carbon.yaml
