@@ -101,9 +101,9 @@ class SimSimEval:
             hardware=False,
         )
 
-        if cfg.slider_type == "arbitrary":
-            # create arbitrary shape sdf file
-            create_arbitrary_shape_sdf_file(cfg, self.sim_config)
+        # if cfg.slider_type == "arbitrary":
+        #     # create arbitrary shape sdf file
+        #     create_arbitrary_shape_sdf_file(cfg, self.sim_config)
 
         # Diffusion Policy
         print(self.sim_config.diffusion_policy_config)
