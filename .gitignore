@@ -164,3 +164,9 @@ dmypy.json
 
 .vscode
 hardware_demos
+
+# MIT Supercloud logs
+LL*
+*.log-*
+
+wandb/

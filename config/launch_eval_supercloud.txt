@@ -1,0 +1,2 @@
+checkpoint_path,run_dir,config_name
+/home/gridsan/aagarwal2/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_resnet_plus_transformer/hierarchy_basic/12_obs/, eval/context_length_exp_adam_data_resnet_plus_transformer/hierarchy_basic/12_obs/, gamepad_teleop_carbon.yaml
