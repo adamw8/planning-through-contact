@@ -24,6 +24,7 @@ class DiffusionPolicyConfig:
     device: str = "cuda:0"
     cfg_overrides: dict = field(default_factory={})
     save_logs: bool = False
+    use_DDIM: bool = True
 
     def __eq__(self, other: "DiffusionPolicyConfig"):
         return (
@@ -37,6 +38,7 @@ class DiffusionPolicyConfig:
             and self.device == other.device
             and self.cfg_overrides == other.cfg_overrides
             and self.save_logs == other.save_logs
+            and self.use_DDIM == other.use_DDIM
         )
 
 
@@ -66,6 +68,7 @@ class DiffusionPolicySource(DesiredPlanarPositionSourceBase):
                 device=diffusion_policy_config.device,
                 cfg_overrides=diffusion_policy_config.cfg_overrides,
                 save_logs=diffusion_policy_config.save_logs,
+                use_DDIM=diffusion_policy_config.use_DDIM,
             ),
         )
 

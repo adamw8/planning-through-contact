@@ -219,7 +219,9 @@ def run_simulation(
     else:
         stderr_lines = result.stderr.strip().splitlines()
         last_250 = stderr_lines[-250:] if len(stderr_lines) > 0 else []
-        print(f"\n❌ Failed: {run_dir}\nError (last 250lines)\n: {last_250}")
+        print(f"\n❌ Failed: {run_dir}\nError (last 250 lines)\n:")
+        for line in last_250:
+            print(line)
         success_rate = None
 
     print("\n" + "=" * 50)

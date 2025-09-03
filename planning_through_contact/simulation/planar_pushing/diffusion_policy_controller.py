@@ -44,6 +44,7 @@ class DiffusionPolicyController(LeafSystem):
         device="cuda:0",
         debug: bool = False,
         save_logs: bool = False,
+        use_DDIM: bool = True,
         cfg_overrides: dict = {},
     ):
         super().__init__()
@@ -57,6 +58,7 @@ class DiffusionPolicyController(LeafSystem):
         self._debug = debug
         self._device = torch.device(device)
         self._cfg_overrides = cfg_overrides
+        self._use_DDIM = use_DDIM
         self._load_policy_from_checkpoint(self._checkpoint)
         self.low_dim_obs_key = self._get_low_dim_obs_key()
 
@@ -230,8 +232,9 @@ class DiffusionPolicyController(LeafSystem):
             start_time = pytime.time()
             with torch.no_grad():
                 action_prediction = self._policy.predict_action(
-                    obs_dict, use_DDIM=True
+                    obs_dict, use_DDIM=self._use_DDIM
                 )["action_pred"][0]
+                breakpoint()
 
                 # Save logs
                 if self._save_logs:
