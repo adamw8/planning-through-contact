@@ -1,2 +1,2 @@
 checkpoint_path,run_dir,config_name
-/home/gridsan/aagarwal2/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_resnet_plus_transformer/cls_token_only/10_obs/, eval/context_length_exp_adam_data_resnet_plus_transformer/cls_token_only/10_obs/, gamepad_teleop_carbon.yaml
+/home/gridsan/aagarwal2/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_variable_training/constant_obs_steps/10_obs/, eval/context_length_exp_adam_data_variable_training/constant_obs_steps/10_obs, gamepad_teleop_carbon.yaml

@@ -12,6 +12,7 @@ scripts/adam
 outputs/
 multirun/
 eval/
+eval_test/
 config/launch_eval.txt
 planning_through_contact/simulation/models/arbitrary_shape.sdf
 planning_through_contact/simulation/models/small_table_hydroelastic_randomized.urdf

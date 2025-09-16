@@ -40,4 +40,4 @@ CSV_PATH=config/launch_eval_supercloud_2.txt
 # CONFIG_NAME=5_obs.yaml
 # HYDRA_RUN_DIR=data/outputs/grasp_two_bins/resnet_plus_transformer/cls_token_only/5_obs
 
-python scripts/planar_pushing/launch_eval.py --csv-path $CSV_PATH --max-concurrent-jobs 5
+python scripts/planar_pushing/launch_eval.py --csv-path $CSV_PATH --max-concurrent-jobs 10

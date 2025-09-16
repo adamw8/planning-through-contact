@@ -35,7 +35,7 @@ import torch.nn.functional as F
 
 USE_PTP_REALIGN = False 
 USE_LOW_PASS_ONLY = False 
-INFER_FROZEN_POLICY = False
+INFER_FROZEN_POLICY = True
 EXCLUDE_OPTIMIZER = False
 USE_DDIM = True
 
