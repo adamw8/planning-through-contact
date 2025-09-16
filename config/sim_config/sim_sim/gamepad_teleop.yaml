@@ -48,10 +48,10 @@ gamepad:
     - [0, -1] # requires reflection (not SO(3))
 diffusion_policy_config:
   _target_: planning_through_contact.simulation.controllers.diffusion_policy_source.DiffusionPolicyConfig
-  checkpoint: '/home/adam/workspace/gcs-diffusion/data/outputs/sim_sim/baseline/150/checkpoints/latest.ckpt'
+  checkpoint: '/home/abhinav/RLG/gcs-diffusion/data/outputs/context_length_exp_adam_data_resnet18/from_scratch/10_obs/checkpoints/epoch=0040-val_loss=0.0130-val_ddim_mse=0.0017.ckpt'
   initial_pusher_pose: ${pusher_start_pose}
   target_slider_pose: ${slider_goal_pose}
-  diffusion_policy_path: '/home/adam/workspace/gcs-diffusion'
+  diffusion_policy_path: '/home/abhinav/RLG/gcs-diffusion'
   freq: 10.0
   delay: 1.0
   debug: false
