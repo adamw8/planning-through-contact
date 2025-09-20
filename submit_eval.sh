@@ -30,7 +30,7 @@ echo "[submit_training.sh] Time: $TIME"
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export PYTHONPATH=/home/gridsan/aagarwal2/RLG/gcs-diffusion:$PYTHONPATH
 export MOSEKLM_LICENSE_FILE=/home/gridsan/aagarwal2/mosek.lic
-CSV_PATH=config/launch_eval_supercloud_2.txt
+CSV_PATH=config/launch_eval_supercloud.txt
 
 # CONFIG_DIR=config/planar_pushing/context_length_exp_adam_data_constant_model_size_init_encoder/2_encoder_freeze_then_resume/
 # CONFIG_NAME=1_obs.yaml
