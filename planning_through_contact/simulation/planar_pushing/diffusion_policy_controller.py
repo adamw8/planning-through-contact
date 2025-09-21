@@ -234,7 +234,6 @@ class DiffusionPolicyController(LeafSystem):
                 action_prediction = self._policy.predict_action(
                     obs_dict, use_DDIM=self._use_DDIM
                 )["action_pred"][0]
-                breakpoint()
 
                 # Save logs
                 if self._save_logs:
