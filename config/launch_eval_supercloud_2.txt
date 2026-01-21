@@ -1,2 +1,2 @@
 checkpoint_path,run_dir,config_name
-/home/gridsan/aagarwal2/RLG/gcs-diffusion/data/outputs/diffusion_transformer_training/context_length_exp_adam_data/2_obs/, eval/diffusion_transformer_training/context_length_exp_adam_data/2_obs, gamepad_teleop_carbon.yaml
+/home/gridsan/aagarwal2/RLG/gcs-diffusion/data/outputs/iros/planar_pushing/data_experiments/unet_cross_attention/data_160/2_obs, eval/iros/planar_pushing/data_experiments/unet_cross_attention/data_160/2_obs, gamepad_teleop_carbon.yaml

@@ -109,7 +109,7 @@ class DiffusionPolicyController(LeafSystem):
 
         # indexing parameters for action predictions
         # Note: this used to be self._state = self._obs_horizon - 1
-        self._start = self._obs_horizon
+        self._start = self._obs_horizon - 1
         self._end = self._start + self._action_steps
 
         # variables for DoCalcOutput

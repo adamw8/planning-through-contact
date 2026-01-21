@@ -30,7 +30,17 @@ echo "[submit_training.sh] Time: $TIME"
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export PYTHONPATH=/home/gridsan/aagarwal2/RLG/gcs-diffusion:$PYTHONPATH
 export MOSEKLM_LICENSE_FILE=/home/gridsan/aagarwal2/mosek.lic
-CSV_PATH=config/launch_eval_supercloud.txt
+CSV_PATH=config/launch_eval_supercloud_4.txt
+
+# Fix lack of X server when running on Supercloud
+export DISPLAY=:99
+export LIBGL_ALWAYS_SOFTWARE=1
+export __GLX_VENDOR_LIBRARY_NAME=mesa
+export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json
+export GALLIUM_DRIVER=llvmpipe
+Xvfb "$DISPLAY" -screen 0 1400x900x24 -nolisten tcp > /tmp/xvfb.log 2>&1 &  # silence Xvfb output
+xvfb_pid=$!
+trap "kill $xvfb_pid" EXIT
 
 # CONFIG_DIR=config/planar_pushing/context_length_exp_adam_data_constant_model_size_init_encoder/2_encoder_freeze_then_resume/
 # CONFIG_NAME=1_obs.yaml
