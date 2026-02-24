@@ -151,18 +151,19 @@ class DiffusionPolicyController(LeafSystem):
 
         # update pretrained path if it exists
         if "pretrained_checkpoint" in self._cfg and self._cfg["pretrained_checkpoint"]:
-            if not os.path.isabs(self._cfg["pretrained_checkpoint"]):
-                self._cfg[
-                    "pretrained_checkpoint"
-                ] = self._diffusion_policy_path.joinpath(
-                    self._cfg["pretrained_checkpoint"]
-                )
+            # if not os.path.isabs(self._cfg["pretrained_checkpoint"]):
+            #     self._cfg[
+            #         "pretrained_checkpoint"
+            #     ] = self._diffusion_policy_path.joinpath(
+            #         self._cfg["pretrained_checkpoint"]
+            #     )
+            self._cfg["pretrained_checkpoint"] = None
 
         self._cfg.training.device = str(self._device)
         cls = hydra.utils.get_class(self._cfg._target_)
         workspace: BaseWorkspace
         workspace = cls(self._cfg)
-        workspace.load_payload(payload, exclude_keys=None, include_keys=None)
+        workspace.load_payload(payload, exclude_keys=("optimizer",), include_keys=None)
         self._normalizer = self._load_normalizer()
 
         # get policy from workspace
@@ -309,7 +310,7 @@ class DiffusionPolicyController(LeafSystem):
             "target": target_tensor.to(self._device),  # 1, D_t
         }
 
-        # Note: Assuming sim is the first element in one hot encoding
+        # Note: Assuming "target" is the first element in one hot encoding
         if (
             hasattr(self._policy, "one_hot_encoding_dim")
             and self._policy.one_hot_encoding_dim > 0
