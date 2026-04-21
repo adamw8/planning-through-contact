@@ -208,7 +208,7 @@ class DiffusionPolicyController(LeafSystem):
         if EXCLUDE_OPTIMIZER == True: 
             workspace.load_payload(payload, exclude_keys=["optimizer"], include_keys=None)
         else: 
-            workspace.load_payload(payload, exclude_keys=None, include_keys=None)
+            workspace.load_payload(payload, exclude_keys=["optimizer", "checkpoint_managers", "scaler"], include_keys=None)
         self._normalizer = self._load_normalizer()
 
         # get policy from workspace
